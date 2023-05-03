@@ -1,0 +1,334 @@
+﻿@using System.Threading
+@using AS_Therapy_GL.Models
+@using AS_Therapy_GL.Models.DTO
+
+@{
+    ViewBag.Title = "Index";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    Int64 LoggedUserId = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+    Int64 LoggedCompId = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"].ToString());
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+}
+
+@*<link href="~/Content/SlidesJs/css/example.css" rel="stylesheet" />*@
+<link href="~/Content/SlidesJs/css/font-awesome.min.css" rel="stylesheet" />
+<script src="~/Content/SlidesJs/js/jquery.slides.min.js"></script>
+
+<!-- SlidesJS Optional: If you'd like to use this design -->
+<style>
+    #slides {
+        display: none;
+        position: relative;
+        top: -15px;
+    }
+
+        #slides .slidesjs-navigation {
+            margin-top: 3px;
+        }
+
+        #slides .slidesjs-previous {
+            margin-right: 5px;
+            float: left;
+            position: relative;
+            top: 32px;
+            z-index: 2000;
+        }
+
+        #slides .slidesjs-next {
+            margin-right: 5px;
+            float: left;
+            position: relative;
+            top: 32px;
+            z-index: 2000;
+        }
+
+
+        #slides .caption {
+            position: relative;
+            top: -1px;
+            width: 200px;
+            height: 40px;
+            color: #fff;
+            /* right: 20px; */
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            text-align: center;
+            float: right;
+        }
+
+            #slides .caption p {
+                color: #fff;
+            }
+
+
+
+    .slidesjs-pagination {
+        margin: 6px 0 0;
+        float: right;
+        list-style: none;
+    }
+
+        .slidesjs-pagination li {
+            float: left;
+            margin: 0 1px;
+        }
+
+            .slidesjs-pagination li a {
+                display: block;
+                width: 13px;
+                height: 0;
+                padding-top: 13px;
+                background-image: url(/Content/SlidesJs/img/pagination.png);
+                background-position: 0 0;
+                float: left;
+                overflow: hidden;
+            }
+
+                .slidesjs-pagination li a.active,
+                .slidesjs-pagination li a:hover.active {
+                    background-position: 0 -13px;
+                }
+
+                .slidesjs-pagination li a:hover {
+                    background-position: 0 -26px;
+                }
+
+    #slides a:link,
+    #slides a:visited {
+        color: #333;
+    }
+
+    #slides a:hover,
+    #slides a:active {
+        color: #9e2020;
+    }
+
+    .navbar {
+        overflow: hidden;
+    }
+
+    #slides .slidesjs-slide img {
+        width: 100%;
+    }
+</style>
+<!-- End SlidesJS Optional-->
+
+
+
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+
+
+
+    @*<div id="contentHeaderBox">
+            <h1>Calendar</h1>
+        </div>
+        <br />*@
+
+
+var year = Convert.ToInt64(currentDateTime.ToString("yyyy"));
+var month = currentDateTime.ToString("MM");
+var findPreviousImages = (from m in db.CalendarImageDbSet where m.Year == year select m).OrderBy(e => e.Month).ToList();
+int count = 0;
+
+    <div class="col-md-12">
+        <div class="form-group">
+            @foreach (var get in findPreviousImages)
+            {
+                count++;
+                if (get.Month == month)
+                {
+                    <input style="display: none" type="text" id="getNumber" value="@count" />
+                    break;
+                }
+            }
+            <div id="slides">
+                <a href="#" class="slidesjs-previous slidesjs-navigation"><i class="fa fa-chevron-circle-left fa-2x"></i></a>
+                <a href="#" class="slidesjs-next slidesjs-navigation"><i class="fa fa-chevron-circle-right fa-2x"></i></a>
+
+                @foreach (var get in findPreviousImages)
+                {
+                    String Month = "";
+                    if (get.Month == "01")
+                    {
+                        Month = "January";
+                    }
+                    else if (get.Month == "02")
+                    {
+                        Month = "February";
+                    }
+                    else if (get.Month == "03")
+                    {
+                        Month = "March";
+                    }
+                    else if (get.Month == "04")
+                    {
+                        Month = "April";
+                    }
+                    else if (get.Month == "05")
+                    {
+                        Month = "May";
+                    }
+                    else if (get.Month == "06")
+                    {
+                        Month = "June";
+                    }
+                    else if (get.Month == "07")
+                    {
+                        Month = "July";
+                    }
+                    else if (get.Month == "08")
+                    {
+                        Month = "August";
+                    }
+                    else if (get.Month == "09")
+                    {
+                        Month = "September";
+                    }
+                    else if (get.Month == "10")
+                    {
+                        Month = "October";
+                    }
+                    else if (get.Month == "11")
+                    {
+                        Month = "November";
+                    }
+                    else if (get.Month == "12")
+                    {
+                        Month = "December";
+                    }
+
+                    String filePath = (get.FilePath).ToString();
+                    <div>
+                        <div class="col-md-12">
+                            <div class="col-md-6" style="text-align: right; "><h4 style="font-weight: bold">Calendar</h4></div>
+                            <div class="col-md-6">
+                                <div class="caption" style="bottom: 0">
+                                    <p>@Month-@get.Year</p>
+                                </div>
+                            </div>
+                        </div>
+                        <img src="@filePath">
+                    </div>
+
+
+                }
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+
+            var number = $("#getNumber").val();
+
+            $("#slides").slidesjs({
+                start: number,
+                //width: 940,
+                height: 980,
+                top: 37,
+                navigation: {
+                    active: true,
+                    // [boolean] Generates next and previous buttons.
+                    // You can set to false and use your own buttons.
+                    // User defined buttons must have the following:
+                    // previous button: class="slidesjs-previous slidesjs-navigation"
+                    // next button: class="slidesjs-next slidesjs-navigation"
+                    effect: "slide"
+                    // [string] Can be either "slide" or "fade".
+                },
+                pagination: {
+                    active: true,
+                    // [boolean] Create pagination items.
+                    // You cannot use your own pagination. Sorry.
+                    effect: "slide"
+                    // [string] Can be either "slide" or "fade".
+                },
+                effect: {
+                    slide: {
+                        // Slide effect settings.
+                        speed: 1400
+                        // [number] Speed in milliseconds of the slide animation.
+                    },
+                    fade: {
+                        speed: 1300,
+                        // [number] Speed in milliseconds of the fade animation.
+                        crossfade: true
+                        // [boolean] Cross-fade the transition.
+                    }
+                },
+
+
+
+                animationStart: function (current) {
+                    $('.caption').animate({
+                        bottom: -35
+                    }, 100);
+                    if (window.console && console.log) {
+                        // example return of current slide number
+                        console.log('animationStart on slide: ', current);
+                    };
+                },
+                animationComplete: function (current) {
+                    $('.caption').animate({
+                        bottom: 0
+                    }, 200);
+                    if (window.console && console.log) {
+                        // example return of current slide number
+                        console.log('animationComplete on slide: ', current);
+                    };
+                },
+                slidesLoaded: function () {
+                    $('.caption').animate({
+                        bottom: 0
+                    }, 200);
+                }
+
+            });
+
+        });
+    </script>
+}
+
+
+
+

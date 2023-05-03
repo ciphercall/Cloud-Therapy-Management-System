@@ -1,0 +1,163 @@
+﻿@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.DTO.UploadGroupDTO
+
+@{
+    ViewBag.Title = "GroupView";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    Int64 LoggedCompId = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+    Int64 loggedUserID = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedUserID"]);
+
+
+    var permission_Check = from m in db.AslRoleDbSet where m.COMPID == LoggedCompId && m.USERID == loggedUserID && m.CONTROLLERNAME == "uploadcontact" select m;
+    var Status = "";
+    foreach (var check in permission_Check)
+    {
+        Status = check.STATUS;
+    }
+
+
+    if (Status == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+}
+
+<link href="~/Content/Angular-File/ng-grid.css" rel="stylesheet" />
+
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Contact Group</h1>
+        <div class="btn-group pull-right" id="editOption">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                <i class="fa fa-cog"></i>
+            </button>
+            <ul class="dropdown-menu pull-right" style="" role="menu">
+                <li>
+                    <a href="@Url.Action("UploadDocument", "UploadContact")"><i class="fa fa-file-text"></i> Group wise contact upload</a>
+                    <a href="@Url.Action("EditContact", "UploadEdit")"><i class="fa fa-file-text"></i> Edit Contact</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <br />
+
+
+    <div class="col-md-12">
+        <div class="form-group">
+            <div ng-app="UploadGroupApp" data-ng-controller="ApiUploadGroupController">
+
+                <div class="row">
+                    <form name="addUploadGroup" data-ng-show="addMode" @*style="width:600px;margin:0px auto;"*@>
+                        @Html.HiddenFor(model => model.COMPID, new { id = "txtcompid", style = "width:3em;", @Value = LoggedCompId })
+                        @Html.HiddenFor(model => model.INSUSERID, new { id = "txtInsertUserid", style = "width:3em;", @Value = loggedUserID })
+                        @Html.HiddenFor(model => model.INSLTUDE, new { id = "latlon" })
+                        <input id="lat" type="hidden" />
+                        <input id="lon" type="hidden" />
+                    </form>
+                </div>
+
+                <div class="row">
+                    @*<div class="col-md-1">
+                        </div>*@
+                    <div class="col-md-12">
+                        <div class="panel panel-primary">
+                            <div class="panel-heading">Group</div>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <tr>
+                                        <th>Group Name</th>
+                                        <th></th>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="text" class="form-control" data-ng-model="newChild.GROUPNM" id="GroupNameID" required /></td>
+                                        <td><input type="submit" value="Insert" data-ng-click="addrow($event)" class="btn btn-primary" /></td>
+                                    </tr>
+                                    <tr data-ng-repeat="testitem in UploadGroupData">
+                                        <td hidden><strong data-ng-hide="testitem.editMode">{{testitem.ID}}</strong></td>
+                                        <td hidden><p data-ng-hide="testitem.editMode">{{ testitem.GROUPID }}</p></td>
+                                        <td>
+                                            <p data-ng-hide="testitem.editMode">{{ testitem.GROUPNM }}</p>
+                                            <input class="form-control" data-ng-show="testitem.editMode" type="text" data-ng-model="testitem.GROUPNM" id="gridGroupNameID" />
+                                        </td>
+                                        <td>
+                                            <p data-ng-hide="testitem.editMode"><a data-ng-click="toggleEdit(testitem)" href="javascript:;">Edit</a> | <a data-ng-click="deleteItem(testitem)" href="javascript:;">Delete</a></p>
+                                            <p data-ng-show="testitem.editMode"><a data-ng-click="update(testitem)" href="javascript:;">Save</a> | <a data-ng-click="toggleEdit_Cancel(testitem)" href="javascript:;">Cancel</a></p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    @*<div class="col-md-1">
+                        </div>*@
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    //Latitute & longitude
+    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+    <script language="javascript" type="text/javascript">
+        $(function () {
+            navigator.geolocation.getCurrentPosition(showPosition);
+            //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+            function showPosition(position) {
+                var coordinates = position.coords;
+                $("#lat").val(coordinates.latitude);
+                $("#lon").val(coordinates.longitude);
+
+                $("#latlon").val(
+                    $("#lat").val() + "," + $("#lon").val()
+                );
+            }
+        });
+    </script>
+}
+
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+@*<script src="~/Content/jquery-2.1.4/jquery-2.1.4.min.js"></script>*@
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+
+
+<script src="~/Scripts/angularjs/1.0.5/angular.js"></script>
+<script src="~/Scripts/UploadDocument/UploadGroup.js"></script>
+<script src="~/Scripts/angularjs/ui-bootstrap-tpls-0.4.0.js"></script>
+
+@*<script src="~/Scripts/Underscore.js"></script>*@

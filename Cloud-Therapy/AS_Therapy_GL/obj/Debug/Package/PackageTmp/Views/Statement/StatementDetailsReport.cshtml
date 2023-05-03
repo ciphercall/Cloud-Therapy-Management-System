@@ -1,0 +1,576 @@
+﻿@using AS_Therapy_GL.DataAccess
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+@{
+    Layout = null;
+
+    var LoggedCompId = Model.AGlMaster.COMPID;
+
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+
+    string companyName = "", address = "", contactNo = "";
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+
+    var SelectCompanyName = from n in db.AslCompanyDbSet
+
+                            where n.COMPID == compid
+                            select new { n.COMPNM, n.ADDRESS, n.CONTACTNO };
+
+    foreach (var n in SelectCompanyName)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+
+    var fromdate = Model.FromDate;
+    var todate = Model.ToDate;
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+    decimal opBalance = 0, totaldebit = 0, totalcredit = 0, totalbalance = 0;
+    string status = "";
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="10%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+
+                </tr>
+
+                <tr style="background-color: #00689b">
+                    <td colspan="12">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<span>  @contactno</span></p>
+                    </td>
+
+                    <td colspan="6" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>
+
+                <tr>
+                    <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Receipts & Payment Statement Details</td>
+                    <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+
+                <tr style="outline: thin solid">
+                    @{
+                        string d = Convert.ToString(fromdate);
+                        DateTime fdate = DateTime.Parse(d);
+                        string ffdt = fdate.ToString("dd-MMM-yyyy");
+
+
+                        string d2 = Convert.ToString(todate);
+                        DateTime fdate2 = DateTime.Parse(d2);
+                        string ffdt2 = fdate2.ToString("dd-MMM-yyyy");
+
+                    }
+                    <td colspan="12" style="font-weight: bold;padding:4px">
+                        From : <span style="font-weight:bold">@ffdt</span> <span>To :</span>
+                        <span style="font-weight:bold">@ffdt2</span>
+                    </td>
+
+
+
+                </tr>
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="12" style="color: white; padding: 4px; font-size: small" align="center">Particulars</td>
+                    <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Debit Amount</td>
+                    <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Credit Amount</td>
+                </tr>
+            </thead>
+            <tbody>
+
+                <tr style="outline: thin initial">
+                    <td colspan="18" style="padding-left: 4px;font-weight: bold">Opening Balance </td>
+                </tr>
+                @{
+                    string cash = Convert.ToString(compid) + "101";
+                    string bank = Convert.ToString(compid) + "102";
+                    var openingBalance = (from n in db.GlMasterDbSet
+                                          where n.COMPID == compid && n.TRANSDT < fromdate
+                                          select n).ToList();
+
+                    var distinctop = (from n in db.GlMasterDbSet
+                                      where n.COMPID == compid && n.TRANSDT < fromdate
+                                      select new { n.DEBITCD }).Distinct().ToList();
+
+                    var account = (from x in db.GlAcchartDbSet where x.COMPID == compid select x).ToList();
+                    string code = "", accountname = "";
+                    decimal subopdebit = 0, subopcredit = 0;
+
+                    var closingBalance = (from n in db.GlMasterDbSet
+                                          where n.COMPID == compid && n.TRANSDT <= todate
+                                          select new { n.DEBITCD, n.DEBITAMT, n.CREDITAMT }).ToList();
+
+                    var distinctClosing = (from n in db.GlMasterDbSet
+                                           where n.COMPID == compid && n.TRANSDT <= todate
+                                           select new { n.DEBITCD }).Distinct().ToList();
+
+                    var receivequery = (from a in db.GlMasterDbSet
+                                        where a.COMPID == compid && a.TRANSDT >= fromdate && a.TRANSDT <= todate && (a.TRANSTP == "MREC" || a.TRANSTP == "CONT")
+                                        select a).OrderBy(e => e.TRANSDT).ToList();
+
+                    var paymentquery = (from a in db.GlMasterDbSet
+                                        where a.COMPID == compid && a.TRANSDT >= fromdate && a.TRANSDT <= todate && (a.TRANSTP == "MPAY" || a.TRANSTP == "CONT")
+                                        select a).OrderBy(e => e.TRANSDT).ToList();
+
+
+                    decimal granddebit = 0, grandcredit = 0, sumdd = 0, sumcc = 0;
+
+
+                }
+
+                @* opening balance start *@
+
+                @foreach (var item in distinctop)
+                {
+                    foreach (var opData in openingBalance)
+                    {
+                        if (opData.DEBITCD == item.DEBITCD)
+                        {
+                            code = Convert.ToString(opData.DEBITCD).Substring(0, 6);
+                            if (code == cash || code == bank)
+                            {
+                                foreach (var foracName in account)
+                                {
+                                    if (foracName.ACCOUNTCD == opData.DEBITCD)
+                                    {
+                                        accountname = foracName.ACCOUNTNM;
+                                        break;
+                                    }
+                                }
+                                //decimal dd = Convert.ToDecimal(@opData.DEBITAMT - @opData.CREDITAMT);
+
+                                sumdd = Convert.ToDecimal(sumdd + opData.DEBITAMT);
+                                sumcc = Convert.ToDecimal(sumcc + opData.CREDITAMT);
+                                status = "y";
+                            }
+                            else
+                            {
+                                status = "n";
+                            }
+
+                        }
+
+
+                    }
+                    if (status == "y")
+                    {
+                        decimal ans = Convert.ToDecimal(sumdd - sumcc);
+                        Int64 st = 0;
+                        decimal rr = 0;
+                        string aaa = "", amt = "";
+                        if (ans < 0)
+                        {
+                            rr = ans * (-1);
+                            aaa = Convert.ToString(rr);
+
+                            amt = CommainAmount.AmountwithComma(aaa);
+                            st = 1;
+                        }
+                        else
+                        {
+                            aaa = Convert.ToString(ans);
+                            amt = CommainAmount.AmountwithComma(aaa);
+                            st = 0;
+                        }
+                        <tr>
+                            <td colspan="12" style="font-size: small">@ffdt||0||@accountname</td>
+                            @if (st == 1)
+                            {
+                                <td colspan="3" align="right" style="font-size: small">-@amt</td>
+                            }
+                            else
+                            {
+                                <td colspan="3" align="right" style="font-size: small">@amt</td>
+                            }
+                            <td colspan="3" align="right" style="font-size: small">0.00</td>
+                        </tr>
+                            subopdebit = subopdebit + ans;
+                            subopcredit = Convert.ToDecimal(subopcredit + 0);
+                            sumdd = 0;
+                            sumcc = 0;
+                    }
+
+                }
+                <tr style="outline: thin solid">
+                    <td colspan="12" align="right" style="font-weight: bold;font-size: small">Sub Total : </td>
+                    @{
+                        Int64 st5 = 0;
+                        string Resultdebit = "", Resultcredit = "";
+
+                        string convertamount5 = Convert.ToString(subopdebit);
+                        Resultdebit = CommainAmount.AmountwithComma(convertamount5);
+                        string convertamount6 = Convert.ToString(subopcredit);
+                        Resultcredit = CommainAmount.AmountwithComma(convertamount6);
+
+
+
+                    }
+                    @if (Resultdebit == "")
+                    {
+                        <td colspan="3" align="right" style="font-weight: bold;font-size: small">0.00</td>
+                    }
+                    else
+                    {
+                        <td colspan="3" align="right" style="font-weight: bold;font-size: small">@Resultdebit</td>
+                    }
+                    @if (Resultcredit == "")
+                    {
+                        <td colspan="3" align="right" style="font-weight: bold;font-size: small">0.00</td>
+                    }
+                    else
+                    {
+                        <td colspan="3" align="right" style="font-weight: bold;font-size: small">@Resultcredit</td>
+                    }
+
+                </tr>
+                <tr>
+                    <td>
+                        <br />
+                    </td>
+                </tr>
+
+
+
+                @{
+                    granddebit = granddebit + subopdebit;
+                    grandcredit = grandcredit + subopcredit;
+                }
+                @* opening balance ends *@
+
+
+                @* Receive during period starts.... *@
+
+                <tr style="outline: thin initial">
+                    <td colspan="18" style="font-weight: bold;padding-left:4px">Receive During The Period</td>
+                </tr>
+                @{
+                    subopdebit = 0;
+                    subopcredit = 0;
+                }
+                @foreach (var itemreceive in receivequery)
+                {
+                    code = Convert.ToString(itemreceive.DEBITCD).Substring(0, 6);
+                    if (code == cash || code == bank)
+                    {
+                        foreach (var foracName in account)
+                        {
+                            if (foracName.ACCOUNTCD == itemreceive.CREDITCD)
+                            {
+                                accountname = foracName.ACCOUNTNM;
+                                break;
+                            }
+                        }
+                        if (itemreceive.DEBITAMT != 0)
+                        {
+                            <tr>
+                                @{
+                            string dt = Convert.ToString(itemreceive.TRANSDT);
+                            DateTime tdt = DateTime.Parse(dt);
+                            string TDT = tdt.ToString("dd-MMM-yyyy");
+                                }
+                                <td colspan="12" style="font-size: small">@TDT<span>||</span><span>@itemreceive.TRANSNO</span><span>||</span><span>@accountname</span></td>
+                                @{
+
+                            string Resultdebit1 = "";
+
+                            string convertamount7 = Convert.ToString(itemreceive.DEBITAMT);
+                            Resultdebit1 = CommainAmount.AmountwithComma(convertamount7);
+
+                                }
+
+                                <td colspan="3" align="right" style="font-size: small">@Resultdebit1</td>
+                                <td colspan="3" align="right" style="font-size: small">0.00</td>
+                            </tr>
+                        }
+
+                        subopdebit = Convert.ToDecimal(subopdebit + itemreceive.DEBITAMT);
+                        //subopcredit = Convert.ToDecimal(subopcredit + itemreceive.CREDITAMT);
+                    }
+
+                }
+                @{
+                    string aaa4 = Convert.ToString(subopdebit);
+                    string amt4 = CommainAmount.AmountwithComma(aaa4);
+                }
+                <tr style="outline: thin solid">
+                    <td colspan="12" align="right" style="font-weight: bold;font-size: small">Sub Total : </td>
+                    @if (amt4 == "")
+                    {
+                        <td colspan="3" align="right" style="font-weight: bold;font-size: small">0.00</td>
+                    }
+                    else
+                    {
+                        <td colspan="3" align="right" style="font-weight: bold;font-size: small">@amt4</td>
+                    }
+
+                    <td colspan="3" align="right" style="font-weight: bold;font-size: small">0.00</td>
+                </tr>
+                <tr>
+                    <td>
+                        <br />
+                    </td>
+                </tr>
+
+                @{
+                    granddebit = granddebit + subopdebit;
+                    grandcredit = grandcredit + subopcredit;
+                }
+
+
+
+
+
+                @* Payment During the period starts......... *@
+
+                <tr style="outline: thin initial">
+                    <td colspan="18" style="font-weight: bold;padding-left:4px">Payment During The Period</td>
+                </tr>
+                @{
+                    subopdebit = 0;
+                    subopcredit = 0;
+                }
+                @foreach (var itemreceive in paymentquery)
+                {
+                    code = Convert.ToString(itemreceive.DEBITCD).Substring(0, 6);
+                    if (code == cash || code == bank)
+                    {
+                        foreach (var foracName in account)
+                        {
+                            if (foracName.ACCOUNTCD == itemreceive.CREDITCD)
+                            {
+                                accountname = foracName.ACCOUNTNM;
+                                break;
+                            }
+                        }
+                        if (itemreceive.CREDITAMT != 0)
+                        {
+                            <tr>
+                                @{
+                            string dt = Convert.ToString(itemreceive.TRANSDT);
+                            DateTime tdt = DateTime.Parse(dt);
+                            string TDT = tdt.ToString("dd-MMM-yyyy");
+
+                            string aaa5 = Convert.ToString(itemreceive.CREDITAMT);
+                            string amt5 = CommainAmount.AmountwithComma(aaa5);
+
+                                }
+                                <td colspan="12" style="font-size: small">@TDT <span>||</span><span>@itemreceive.TRANSNO</span><span>||</span><span>@accountname</span></td>
+                                <td colspan="3" align="right" style="font-size: small">0.00</td>
+                                <td colspan="3" align="right" style="font-size: small">@amt5</td>
+                            </tr>
+
+                        }
+
+
+                        subopcredit = Convert.ToDecimal(subopcredit + itemreceive.CREDITAMT);
+                    }
+
+                }
+                @{
+                    string aaa6 = Convert.ToString(subopcredit);
+                    string amt6 = CommainAmount.AmountwithComma(aaa6);
+                }
+                <tr style="outline: thin solid">
+                    <td colspan="12" align="right" style="font-weight: bold;font-size: small">Sub Total : </td>
+                    <td colspan="3" align="right" style="font-weight: bold;font-size: small">0.00</td>
+                    @if (amt6 == "")
+                    {
+                        <td colspan="3" align="right" style="font-weight: bold;font-size: small">0.00</td>
+                    }
+                    else
+                    {
+                        <td colspan="3" align="right" style="font-weight: bold;font-size: small">@amt6</td>
+                    }
+                </tr>
+                <tr>
+                    <td>
+                        <br />
+                    </td>
+                </tr>
+
+
+                @{
+                    granddebit = granddebit + subopdebit;
+                    grandcredit = grandcredit + subopcredit;
+                }
+                <tr style="outline: thin initial">
+                    <td colspan="18" style="font-weight: bold;padding-left:4px">Closing Balance</td>
+                </tr>
+                @{
+                    subopdebit = 0;
+                    subopcredit = 0;
+                }
+
+                @foreach (var item in distinctClosing)
+                {
+                    foreach (var closeData in closingBalance)
+                    {
+                        if (closeData.DEBITCD == item.DEBITCD)
+                        {
+                            code = Convert.ToString(closeData.DEBITCD).Substring(0, 6);
+                            if (code == cash || code == bank)
+                            {
+                                foreach (var foracName in account)
+                                {
+                                    if (foracName.ACCOUNTCD == closeData.DEBITCD)
+                                    {
+                                        accountname = foracName.ACCOUNTNM;
+                                        break;
+                                    }
+                                }
+                                //decimal dd = Convert.ToDecimal(@closeData.DEBITAMT - @closeData.CREDITAMT);
+                                sumdd = Convert.ToDecimal(sumdd + closeData.DEBITAMT);
+                                sumcc = Convert.ToDecimal(sumcc + closeData.CREDITAMT);
+                                status = "y";
+
+
+                            }
+                            else
+                            {
+                                status = "n";
+                            }
+                        }
+
+
+                    }
+                    if (status == "y")
+                    {
+                        decimal ans = Convert.ToDecimal(sumdd - sumcc);
+                        Int64 st = 0;
+                        decimal rr = 0;
+                        string aaa = "", amt = "";
+                        if (ans < 0)
+                        {
+                            rr = ans * (-1);
+                            aaa = Convert.ToString(rr);
+
+                            amt = CommainAmount.AmountwithComma(aaa);
+                            st = 1;
+                        }
+                        else
+                        {
+                            aaa = Convert.ToString(ans);
+                            amt = CommainAmount.AmountwithComma(aaa);
+                            st = 0;
+                        }
+                        <tr>
+                            <td colspan="12" style="font-size: small">@ffdt2||0||@accountname</td>
+                            <td colspan="3" align="right" style="font-size: small">0.00</td>
+                            @if (st == 1)
+                            {
+                                <td colspan="3" align="right" style="font-size: small">-@amt</td>
+                            }
+                            else
+                            {
+                                <td colspan="3" align="right" style="font-size: small">@amt</td>
+                            }
+
+                        </tr>
+                            // subopdebit = subopdebit + sumdd;
+                            subopcredit = Convert.ToDecimal(subopcredit + ans);
+                            sumdd = 0;
+                            sumcc = 0;
+                    }
+                }
+                @{
+                    string aaa8 = Convert.ToString(subopcredit);
+                    string amt8 = CommainAmount.AmountwithComma(aaa8);
+                }
+                <tr style="outline: thin solid">
+                    <td colspan="12" align="right" style="font-weight: bold;font-size: small">Sub Total : </td>
+                    <td colspan="3" align="right" style="font-weight: bold;font-size: small">0.00</td>
+                    @if (amt8 == "")
+                    {
+                        <td colspan="3" align="right" style="font-weight: bold;font-size: small">0.00</td>
+                    }
+                    else
+                    {
+                        <td colspan="3" align="right" style="font-weight: bold;font-size: small">@amt8</td>
+                    }
+
+                </tr>
+
+
+                @{
+                    granddebit = granddebit + subopdebit;
+                    grandcredit = grandcredit + subopcredit;
+
+                    string convertamount = Convert.ToString(granddebit);
+                    string tGrandDebit = CommainAmount.AmountwithComma(convertamount);
+
+                    string convertamount2 = Convert.ToString(grandcredit);
+                    string tGrandCredit = CommainAmount.AmountwithComma(convertamount2);
+                }
+
+                <tr style="outline: thin initial">
+                    <td colspan="12" align="right" style="font-weight: bold">Grand Total : </td>
+                    @if (tGrandDebit == "")
+                    {
+                        <td colspan="3" align="right" style="font-weight: bold">0.00</td>
+                    }
+                    else
+                    {
+                        <td colspan="3" align="right" style="font-weight: bold">@tGrandDebit</td>
+                    }
+                    @if (tGrandCredit == "")
+                    {
+                        <td colspan="3" align="right" style="font-weight: bold">0.00</td>
+                    }
+                    else
+                    {
+                        <td colspan="3" align="right" style="font-weight: bold">@tGrandCredit</td>
+                    }
+
+                </tr>
+
+
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
+
+

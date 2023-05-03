@@ -1,0 +1,309 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.UserReportViewModel
+
+@{
+    ViewBag.Title = "GetCompanyUserLogData";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    Int64 compid = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+    Int64 loggedUserID = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+
+
+    var permission_Check = from m in db.AslRoleDbSet
+                           where m.COMPID == compid && m.USERID == loggedUserID
+                               && m.CONTROLLERNAME == "UserReport" && m.ACTIONNAME == "GetCompanyUserLogData"
+                           select m;
+    var Status = "";
+    foreach (var check in permission_Check)
+    {
+        Status = check.STATUS;
+    }
+
+    if (Status == "A")
+    {
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+
+    //UserName Name: [ ] , Company Name Field loaded in DropdownList
+    List<SelectListItem> aslUserName = new List<SelectListItem>();
+    var result = (from n in db.AslUsercoDbSet
+                  where n.COMPID == compid
+                  select n).ToList();
+                  
+    if (LoggedUserTp == "CompanyAdmin")
+    {
+        foreach (var n in result)
+        {
+            AslUserco aslUserco = db.AslUsercoDbSet.FirstOrDefault(e => e.USERID == n.USERID);
+            if (aslUserco != null)
+            {
+                aslUserName.Add(new SelectListItem { Text = aslUserco.LOGINID, Value = aslUserco.USERID.ToString() });
+            }
+        }
+    }
+    else if (LoggedUserTp == "UserAdmin")
+    {
+        foreach (var n in result)
+        {
+            AslUserco aslUserco = db.AslUsercoDbSet.FirstOrDefault(e => e.USERID == n.USERID && e.OPTP != "CompanyAdmin" && e.USERID != loggedUserID);
+            if (aslUserco != null)
+            {
+                aslUserName.Add(new SelectListItem { Text = aslUserco.LOGINID, Value = aslUserco.USERID.ToString() });
+            }
+        }
+    }
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+}
+
+<link href="~/Content/bootstrap-datepicker-css/datepicker.css" rel="stylesheet" />
+<link href="~/Content/bootstrap-datepicker-css/datepicker3.css" rel="stylesheet" />
+<script src="~/Scripts/bootstrap-datepicker.js"></script>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.AslUserco.COMPID, new { @Value = compid })
+    @Html.HiddenFor(model => model.AslUserco.USERID, new { id = "hiddenUseerID" })
+
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">User Log Data Reports</h1>
+    </div>
+    <br />
+
+
+    <div class="col-md-12">
+        <div class="form-group">
+
+            <div class="row">
+                <div class="col-md-4">
+                    @Html.Label("name", "From Date: ")
+                </div>
+                <div class="col-md-6">
+                    @Html.TextBoxFor(model => model.FromDate, new { id = "fromDate", @class = "form-control", @Value = currentDateTime.ToString("dd-MMM-yyyy"), autofocus = true })
+
+                </div>
+                @if (TempData["ErrorFromDateMessage"] != null)
+                {
+
+                    <div class="col-md-2">
+                        <h6 style="color: #C03523">@TempData["ErrorFromDateMessage"]</h6>
+                    </div>
+
+                }
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-4">
+                    @Html.Label("name", "To Date: ")
+                </div>
+                <div class="col-md-6">
+                    @Html.TextBoxFor(model => model.ToDate, new { id = "toDate", @class = "form-control", @Value = currentDateTime.ToString("dd-MMM-yyyy") })
+                    @*@Html.ValidationMessageFor(model => model.NewPassword, "", new { @class = "text-danger" })*@
+                </div>
+                @if (TempData["ErrorToDateMessage"] != null)
+                {
+                    <div class="row">
+
+                        <div class="col-md-2">
+                            <h6 style="color: #C03523">@TempData["ErrorToDateMessage"] </h6>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-4">
+                    @Html.Label("name", "User ID: ")
+                </div>
+                <div class="col-md-6">
+                    @Html.DropDownListFor(model => model.AslUserco.USERID, aslUserName, "Select User Name", new { @class = "form-control", id = "ddlDropUsernameID" })
+
+                </div>
+                @if (TempData["ErrorMessageUserId"] != null)
+                {
+                    <div class="row">
+                        <div class="col-md-2"></div>
+                        <div class="col-md-4">
+                            <h6 style="color: #C03523">@TempData["ErrorMessageUserId"]</h6>
+                        </div>
+                    </div>
+                }
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-4">
+                    @Html.Label("name", "User Name: ")
+                </div>
+                <div class="col-md-6">
+                    @Html.TextBoxFor(model => model.AslUserco.USERNM, new { @class = "form-control", id = "txtuserNameID", @readonly = "readonly" })
+
+                </div>
+
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-4">
+                    @Html.Label("name", "Operation Type: ")
+                </div>
+                <div class="col-md-6">
+                    @Html.TextBoxFor(model => model.AslUserco.OPTP, new { @class = "form-control", id = "operationTypeID", @readonly = "readonly" })
+
+                </div>
+
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-4"></div>
+                <div class="col-md-6">
+                    @if (TempData["ErrorMessagetUserLogData"] != null || TempData["ErrorMessageUserId"] != null || TempData["ErrorToDateMessage"] != null || TempData["ErrorFromDateMessage"] != null)
+                    {
+                        <input type="submit" class="btn btn-success" value="Print User Log Data" />
+                    }
+                    else
+                    {
+                        <input type="submit" class="btn btn-success" value="Print User Log Data" formtarget="_blank" />
+                    }
+                    @*<input type="submit" class="btn btn-primary btn-block" value="Create New Password" />*@
+                </div>
+            </div>
+
+            @if (TempData["ErrorMessagetUserLogData"] != null)
+            {
+                <div class="panel-heading text-center">
+
+                    <h4 style="color: #226699">@TempData["ErrorMessagetUserLogData"]</h4>
+
+
+                </div>
+            }
+        </div>
+    </div>
+
+
+
+
+    <script type="text/javascript">
+
+
+        $(document).ready(function () {
+            
+            $('#fromDate').datepicker({
+                format: "dd-M-yyyy",
+                autoclose: true,
+                todayHighlight: true,
+                showOnFocus: true,
+            }).on('show', function (e) {
+                if (e.date) {
+                    $(this).data('stickyDate', e.date);
+                }
+                else {
+                    $(this).data('stickyDate', null);
+                }
+            }).on('hide', function (e) {
+                var stickyDate = $(this).data('stickyDate');
+
+                if (!e.date && stickyDate) {
+                    $(this).datepicker('setDate', stickyDate);
+                    $(this).data('stickyDate', null);
+                }
+                document.getElementById("toDate").focus();
+            });
+
+
+
+            $('#toDate').datepicker({
+                format: "dd-M-yyyy",
+                autoclose: true,
+                todayHighlight: true,
+                showOnFocus: true,
+            }).on('show', function (e) {
+                if (e.date) {
+                    $(this).data('stickyDate', e.date);
+                }
+                else {
+                    $(this).data('stickyDate', null);
+                }
+            }).on('hide', function (e) {
+                var stickyDate = $(this).data('stickyDate');
+
+                if (!e.date && stickyDate) {
+                    $(this).datepicker('setDate', stickyDate);
+                    $(this).data('stickyDate', null);
+                }
+                document.getElementById("ddlDropUsernameID").focus();
+            });
+
+
+            //1. User Name: [    ]
+            $('#ddlDropUsernameID').change(function () {
+                //When the UserName (Dropdown list) changed then get the "User ID" from "ASLUSERCO" table
+                var changedDropDown = $('#ddlDropUsernameID option:selected').val();
+
+                var txtUserID = document.getElementById('hiddenUseerID');
+                var txtUserName = document.getElementById('txtuserNameID');
+                var txtOperationType = document.getElementById('operationTypeID');
+
+                // when the value of the User Name field changes update the Select "UserName" field
+                $("#txtuserNameID").val("Null");
+                $("#operationTypeID").val("Null");
+
+                $.getJSON(
+                    "/UserReport/UserNameChanged", { "ChangedDropDown": changedDropDown },
+                    function (myData) {
+                        txtUserID.value = myData.USERID;
+                        txtUserName.value = myData.USERNM;
+                        txtOperationType.value = myData.OPTP;
+
+                        var id = txtUserID.value;
+                        document.getElementById("ddlDropUsernameID").focus();
+
+                        @*//Load Partial view
+                    $('#result-Table').load('@Url.Action("UserLogData")', { userID: id });*@
+                    });
+
+            });
+
+
+
+        });
+    </script>
+
+
+
+}
+
+

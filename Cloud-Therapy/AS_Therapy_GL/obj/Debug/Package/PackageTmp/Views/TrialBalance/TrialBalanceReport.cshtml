@@ -1,0 +1,221 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using AS_Therapy_GL.DataAccess
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+@{
+    Layout = null;
+
+    var LoggedCompId = Model.AGlMaster.COMPID;
+
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+
+    string companyName = "", address = "", contactNo = "";
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    var SelectCompanyName = from n in db.AslCompanyDbSet
+
+                            where n.COMPID == compid
+                            select new { n.COMPNM, n.ADDRESS, n.CONTACTNO };
+
+    foreach (var n in SelectCompanyName)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+
+    var fromdate = Model.AGlMaster.TRANSDT;
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+    decimal sumcredit = 0, sumdebit = 0, result = 0, debitamount = 0, creditamount = 0, totaldebit = 0, totalcredit = 0;
+    string tdebit = "", tcredit = "";
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+</head>
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="10%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+
+                </tr>
+                <tr style="background-color: #00689b">
+                    <td colspan="12">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<span>  @contactno</span></p>
+                    </td>
+
+                    <td colspan="6" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Trial Balance (R&D)</td>
+                    <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="outline: thin solid">
+
+                    @{
+                        string d = Convert.ToString(fromdate);
+                        DateTime fdate = DateTime.Parse(d);
+                        string ffdt = fdate.ToString("dd-MMM-yyyy");
+
+
+                    }
+                    <td colspan="12" style="font-weight: bold;padding:4px">
+                        As On : <span style="font-weight:bold">@ffdt</span>
+
+                    </td>
+                </tr>
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="12" style="color: white; padding: 4px; font-size: small" align="center">Head Description</td>
+                    <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Debit Balance</td>
+                    <td colspan="3" style="color: white; padding: 4px; font-size: small" align="center">Credit Balance</td>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+
+                    Int64 minHeadCD = Convert.ToInt64((from m in db.GlAccharmstDbSet where m.COMPID == compid select m.HEADCD).Min());
+                    Int64 maxHeadCD = Convert.ToInt64((from m in db.GlAccharmstDbSet where m.COMPID == compid select m.HEADCD).Max());
+                    for (Int64 z = minHeadCD; z <= maxHeadCD; z++)
+                    {
+                        Int64 Current_HeadCD = z;
+
+                        System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+                        string query = string.Format(
+                            @"SELECT C.DEBITCD, GL_ACCHART.ACCOUNTNM, C.DEBIT, C.CREDIT ,GL_ACCHART.HEADTP, GL_ACCHARMST.HEADNM, GL_ACCHARMST.HEADCD
+FROM (SELECT DEBITCD, (CASE WHEN a.BAMT > 0 THEN a.BAMT ELSE 0 END) AS DEBIT,
+(CASE WHEN a.BAMT < 0 THEN a.BAMT * - 1 ELSE 0 END) AS CREDIT
+FROM (SELECT DEBITCD, SUM(ISNULL(DEBITAMT, 0)) - SUM(ISNULL(CREDITAMT, 0)) AS BAMT
+FROM  GL_MASTER
+WHERE (SUBSTRING(cast(DEBITCD as nvarchar(20)), 1, 1) IN ('1', '4')) AND (TRANSDT <= '{1}') and COMPID='{0}'
+GROUP BY DEBITCD) AS a
+UNION
+SELECT DEBITCD, (CASE WHEN b.BAMT < 0 THEN b.BAMT * - 1 ELSE 0 END) AS DEBIT,
+(CASE WHEN b.BAMT > 0 THEN B.BAMT ELSE 0 END) AS CREDIT
+FROM (SELECT DEBITCD, SUM(ISNULL(CREDITAMT, 0)) - SUM(ISNULL(DEBITAMT, 0)) AS BAMT
+FROM GL_MASTER AS GL_MASTER_1
+WHERE (SUBSTRING(cast(DEBITCD as nvarchar(20)), 1, 1) IN ('2', '3')) AND (TRANSDT <= '{1}')  and COMPID='{0}'
+GROUP BY DEBITCD) AS b) AS C INNER JOIN
+GL_ACCHART ON C.DEBITCD = GL_ACCHART.ACCOUNTCD and GL_ACCHART.COMPID = '{0}'
+Inner join GL_ACCHARMST on GL_ACCHARMST.HEADCD='{2}' and GL_ACCHART.HEADCD=GL_ACCHARMST.HEADCD and GL_ACCHART.COMPID = GL_ACCHARMST.COMPID
+and GL_ACCHARMST.COMPID = '{0}'
+order by GL_ACCHART.ACCOUNTNM",
+                            compid, fromdate, Current_HeadCD);
+                        System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn);
+                        conn.Open();
+                        SqlDataAdapter da = new SqlDataAdapter(cmd);
+                        DataTable ds = new DataTable();
+                        da.Fill(ds);
+
+                        int j = 0;
+                        string AccountName = "", HeadName = "";
+                        Decimal DEBIT = 0, CREDIT = 0;
+
+                        foreach (DataRow row in ds.Rows)
+                        {
+                            HeadName = row["HEADNM"].ToString();
+                            <tr>
+                                <td>
+                                    <br />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="left" colspan="18" style="padding-left: 20px">
+                                    <strong>@HeadName</strong>
+                                </td>
+                            </tr>
+                            break;
+                        }
+
+                        foreach (DataRow row in ds.Rows)
+                        {
+                            AccountName = row["ACCOUNTNM"].ToString();
+                            DEBIT = Convert.ToDecimal(row["DEBIT"].ToString());
+                            CREDIT = Convert.ToDecimal(row["CREDIT"].ToString());
+                            if (j == 0)
+                            {
+                                <tr style="outline: thin initial;background-color: #E4E4E4">
+                                    <td colspan="12" style="padding-left: 4px">@AccountName</td>
+                                    <td colspan="3" align="right">@DEBIT</td>
+                                    <td colspan="3" align="right">@CREDIT</td>
+                                </tr>
+                                j = 1;
+                            }
+                            else
+                            {
+                                <tr style="outline: thin initial">
+                                    <td colspan="12" style="padding-left: 4px">@AccountName</td>
+                                    <td colspan="3" align="right">@DEBIT</td>
+                                    <td colspan="3" align="right">@CREDIT</td>
+                                </tr>
+                                j = 0;
+                            }
+                            totaldebit = Convert.ToDecimal(totaldebit + DEBIT);
+                            totalcredit = Convert.ToDecimal(totalcredit + CREDIT);
+                        }
+
+                        conn.Close();
+                    }
+
+
+                }
+
+
+                <tr style=" outline: thin solid">
+                    <td colspan="12" style="font-weight: bold;padding-left: 4px" align="right">Total : </td>
+                    @{
+                        string convertdebit = Convert.ToString(totaldebit);
+                        tdebit = CommainAmount.AmountwithComma(convertdebit);
+
+                        string convertcredit = Convert.ToString(totalcredit);
+                        tcredit = CommainAmount.AmountwithComma(convertcredit);
+
+                    }
+                    <td colspan="3" style="font-weight: bold" align="right">@tdebit</td>
+                    <td colspan="3" style="font-weight: bold" align="right">@tcredit</td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
+

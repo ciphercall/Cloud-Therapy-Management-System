@@ -1,0 +1,191 @@
+﻿@using System.Web.UI.WebControls
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+
+
+@{
+    ViewBag.Title = "Index";
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    var LoggedCompId = HttpContext.Current.Session["loggedCompID"].ToString();
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+    Int64 loggedUserID = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+
+
+    var permission_Check = from m in db.AslRoleDbSet
+                           where m.COMPID == compid && m.USERID == loggedUserID
+                               && m.CONTROLLERNAME == "Ledger" && m.ACTIONNAME == "BankBookIndex"
+                           select m;
+    var Status = "";
+    foreach (var check in permission_Check)
+    {
+        Status = check.STATUS;
+    }
+
+    if (Status == "A")
+    {
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+    
+    
+    
+    
+    
+    
+    
+    List<SelectListItem> bankHead = new List<SelectListItem>();
+    string headcd = Convert.ToString(compid) + "102";
+    Int64 HeadCD = Convert.ToInt64(headcd);
+    var head = from n in db.GlAcchartDbSet where n.COMPID == compid && n.HEADCD == HeadCD select new { n.ACCOUNTNM, n.ACCOUNTCD };
+    foreach (var x in head)
+    {
+        bankHead.Add(new SelectListItem { Text = Convert.ToString(x.ACCOUNTNM), Value = Convert.ToString(x.ACCOUNTNM) });
+    }
+
+
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+}
+
+<link href="~/Content/bootstrap-datepicker-css/datepicker.css" rel="stylesheet" />
+<link href="~/Content/bootstrap-datepicker-css/datepicker3.css" rel="stylesheet" />
+
+<script src="~/Scripts/bootstrap-datepicker.js"></script>
+
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.AGlMaster.COMPID, new { id = "txtCompId", @Value = LoggedCompId })
+    @*@Html.HiddenFor(model => model.AGlMaster.DEBITCD, new { id = "txtHeadId", @Value = TempData["HeadCD"] })*@
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Bank Book</h1>
+    </div>
+    <br />
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+
+                <div class="col-md-4">
+                    <span>@Html.Label("name", "Bank Head", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.DropDownListFor(model => model.AGL_acchart.ACCOUNTNM, bankHead, "--Select--", htmlAttributes: new { id = "txtAccountName", @class = "form-control input-sm" , autofocus =true})
+                    @*@Html.ValidationMessageFor(model => model.HEADTP, "", new { @class = "text-danger" })*@
+                </div>
+
+                <div class="col-md-3">
+                    <span>@Html.Label("name", "From", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.TextBoxFor(model => model.FromDate, new { @class = "form-control input-sm", id = "idFromdate" })
+                    @*@Html.ValidationMessageFor(model => model.HEADNM, "", new { @class = "text-danger" })*@
+                </div>
+
+                <div class="col-md-3">
+                    <span>@Html.Label("name", "To", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.TextBoxFor(model => model.ToDate, new { @class = "form-control input-sm", id = "idTodate" })
+                    @*@Html.ValidationMessageFor(model => model.HEADNM, "", new { @class = "text-danger" })*@
+                </div>
+
+
+                <div class="col-md-2">
+                    <span><br /></span>
+                    <input id="SubmitId" type="submit" class="btn btn-info" value="Print" name="command" formtarget="_blank" />
+                </div>
+
+            </div>
+        </div>
+
+
+
+
+    </div>
+
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#idFromdate').datepicker({
+                format: "dd-M-yyyy",
+                autoclose: true,
+                todayHighlight: true,
+                showOnFocus: true,
+                //format: "yyyy-M-dd"
+            }).on('show', function (e) {
+                if (e.date) {
+                    $(this).data('stickyDate', e.date);
+                }
+                else {
+                    $(this).data('stickyDate', null);
+                }
+            }).on('hide', function (e) {
+                var stickyDate = $(this).data('stickyDate');
+
+                if (!e.date && stickyDate) {
+                    $(this).datepicker('setDate', stickyDate);
+                    $(this).data('stickyDate', null);
+                }
+                document.getElementById("idTodate").focus();
+            });
+
+
+
+
+            $('#idTodate').datepicker({
+                format: "dd-M-yyyy",
+                autoclose: true,
+                todayHighlight: true,
+                showOnFocus: true,
+                //format: "yyyy-M-dd"
+            }).on('show', function (e) {
+                if (e.date) {
+                    $(this).data('stickyDate', e.date);
+                }
+                else {
+                    $(this).data('stickyDate', null);
+                }
+            }).on('hide', function (e) {
+                var stickyDate = $(this).data('stickyDate');
+
+                if (!e.date && stickyDate) {
+                    $(this).datepicker('setDate', stickyDate);
+                    $(this).data('stickyDate', null);
+                }
+                document.getElementById("SubmitId").focus();
+            });
+        });
+    </script>
+
+}
+
+
+
+
+

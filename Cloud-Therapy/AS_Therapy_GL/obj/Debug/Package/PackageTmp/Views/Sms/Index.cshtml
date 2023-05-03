@@ -1,0 +1,277 @@
+﻿@using System.Web.Optimization
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.DTO.MailDTO
+@{
+    ViewBag.Title = "Index";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Int64 LoggedCompId = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"].ToString());
+    Int64 LoggedUserId = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+
+
+    string companyName = "";
+    var findComanyName = (from m in db.AslCompanyDbSet where m.COMPID == LoggedCompId select new { m.COMPNM });
+    foreach (var comp in findComanyName)
+    {
+        companyName = comp.COMPNM;
+    }
+
+
+
+    List<SelectListItem> listOfGroupame = new List<SelectListItem>();
+    var result = (from n in db.UploadGroupDbSet
+                  where n.COMPID == LoggedCompId
+                  select n).ToList();
+
+    foreach (var n in result)
+    {
+        Int64 count = 0;
+        var totalMobileNO_1 = (from m in db.UploadContactDbSet where n.COMPID == m.COMPID && m.GROUPID == n.GROUPID && m.MOBNO1 != null select m.MOBNO1).ToList();
+        foreach (var c in totalMobileNO_1)
+        {
+            count++;
+        }
+        var totalMobileNO_2 = (from m in db.UploadContactDbSet where n.COMPID == m.COMPID && m.GROUPID == n.GROUPID && m.MOBNO2 != null select m.MOBNO2).ToList();
+        foreach (var c in totalMobileNO_2)
+        {
+            count++;
+        }
+        string groupNameWithCount = Convert.ToString(n.GROUPNM + " | " + count);
+        listOfGroupame.Add(new SelectListItem { Text = groupNameWithCount, Value = n.GROUPID.ToString() });
+    }
+
+
+    var permission_Check = from m in db.AslRoleDbSet where m.COMPID == LoggedCompId && m.USERID == LoggedUserId && m.CONTROLLERNAME == "sms" select m;
+    var Status = "";
+    foreach (var check in permission_Check)
+    {
+        Status = check.STATUS;
+    }
+
+
+    if (Status == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+}
+
+
+<!-- INSTRUCTIONS -->
+<!-- 2 CSS files are required: -->
+<!--   * Tag-it's base CSS (jquery.tagit.css). -->
+<!--   * Any theme CSS (either a jQuery UI theme such as "flick", or one that's bundled with Tag-it, e.g. tagit.ui-zendesk.css as in this example.) -->
+<!-- The base CSS and tagit.ui-zendesk.css theme are scoped to the Tag-it widget, so they shouldn't affect anything else in your site, unlike with jQuery UI themes. -->
+<link href="../../Content/tag-it-CSS/jquery.tagit.css" rel="stylesheet" />
+<link href="../../Content/tag-it-CSS/tagit.ui-zendesk.css" rel="stylesheet" />
+<!-- If you want the jQuery UI "flick" theme, you can use this instead, but it's not scoped to just Tag-it like tagit.ui-zendesk is: -->
+<!--   <link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/flick/jquery-ui.css"> -->
+<!-- jQuery and jQuery UI are required dependencies. -->
+<!-- Although we use jQuery 1.4 here, it's tested with the latest too (1.8.3 as of writing this.) -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
+
+<!-- The real deal -->
+@*<script src="~/Scripts/tag-it/tag-it.js"></script>*@
+<script src="../../Scripts/tag-it/tag-it.js"></script>
+
+@using (Html.BeginForm())
+{
+
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    //Its not mandatory field its used because this is required attribute. That why default value inserted.
+    @Html.HiddenFor(model => model.COMPID, htmlAttributes: new { @class = "form-control", @Value = LoggedCompId ,id = "txtHiddenCompid"})
+    @Html.HiddenFor(model => model.Subject, htmlAttributes: new { @class = "form-control", @Value = "Subject" })
+    @Html.HiddenFor(model => model.CompanyName, htmlAttributes: new { @class = "form-control", @Value = companyName })
+
+    <div id="contentHeaderBox">
+        @if (TempData["SMSMessage"] != null)
+        {
+            <h1 style="padding-left: 16px;">Sending SMS <span style="color: red; padding-left: 81px;">@TempData["SMSMessage"]</span> </h1>
+        }
+        else if (ViewBag.SMSMessage != null)
+        {
+            <h1 style="padding-left: 16px;">Sending SMS <span style="color: red; padding-left: 70px;">@ViewBag.SMSMessage</span> </h1>
+        }
+        else
+        {
+            <h1 style="padding-left:16px">Sending SMS</h1>
+        }
+        <div class="btn-group pull-right" id="editOption">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                <i class="fa fa-cog"></i>
+            </button>
+            <ul class="dropdown-menu pull-right" style="" role="menu">
+                <li>
+                    <a href="@Url.Action("getPendingSMS", "Sms")"><i class="fa fa-file-text"></i> Pending SMS Info.</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <br />
+    <div class="col-md-12" ng-app="">
+        <div class="form-group">
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Select Group: ", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-4">
+                    @Html.DropDownListFor(model => model.GROUPID, listOfGroupame, "-Select Group Name-", new { @class = "form-control", id = "ddlGroupnameID", autofocus = true })
+                </div>
+                <div class="col-md-2 text-right" style="font-size: 20px">
+                    @Html.Label("name", "Credit: ", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3 text-left" style="font-size: 20px">
+                    <label>@TempData["CheckSMSQuantity"] </label>
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "To Mobile: ")
+                </div>
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.MobileNo, htmlAttributes: new { @class = "form-control", id = "myULTags" })
+                    @Html.ValidationMessageFor(model => model.MobileNo, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Language: ")
+                </div>
+                <div class="col-md-8">
+                    @Html.RadioButtonFor(model => model.Language, "ENG", htmlAttributes: new { @class = "radio-inline", id = "btnEng", @checked = "checked" }) English
+                    @Html.RadioButtonFor(model => model.Language, "BNG", htmlAttributes: new { @class = "radio-inline", id = "btnBan" }) Bangla
+                </div>
+            </div>
+
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Message Body: ")
+                </div>
+                <div class="col-md-5">
+                    <textarea class="form-control"
+                              cols="20"
+                              id="Body"
+                              name="Body"
+                              rows="4" ng-model="Body" maxlength="158"></textarea>
+                    @*@Html.TextAreaFor(model => model.Body, htmlAttributes: new { @class = "form-control",  data_ng_model = "Body", MaxLength = "158", Height = "150px", })*@
+                    @Html.ValidationMessageFor(model => model.Body, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-3" id="charleft" style="color: green;">
+                    <span class="a" ng-bind="158-Body.length+'&nbsp;&nbsp;Character left'"
+                          ng-class="{'btn-warning': Body.length >= 120, 'btn-danger': Body.length >= 141 }"></span>
+                    <span class="b" ng-bind="(158/2-Body.length) +'&nbsp;&nbsp;Character left'" hidden=""
+                          ng-class="{'btn-warning': Body.length >= 50, 'btn-danger': Body.length >= 75 }"></span>
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-2">
+                    <input type="submit" class="btn btn-primary btn-block" value="Send" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        $(document).ready(function () {
+
+            $(".a").show();
+
+            $("#btnEng").click(function () {
+                $(".b").hide();
+                $(".a").show();
+            });
+            $("#btnBan").click(function () {
+                $(".b").show();
+                $(".a").hide();
+            });
+
+            //-------------------------------
+            // Preloading data in markup
+            //-------------------------------
+            $('#myULTags').tagit({
+                allowSpaces: true,
+                minLength: 2,
+                removeConfirmation: true,
+                tagSource: function (request, response) {
+                    //console.log("1");
+                    $.ajax({
+                        url: '@Url.Action("TagSearch_tagit", "Sms")',
+                        data: {
+                            term: request.term,
+                            compid: $('#txtHiddenCompid').val()
+                        },
+                        dataType: "json",
+                        success: function (data) {
+                            response($.map(data, function (item) {
+                                return {
+                                    label: item,
+                                    value: item
+                                };
+                            }));
+                        }
+                    });
+                }
+            });
+
+        });
+    </script>
+
+
+
+    <style type="text/css">
+        .ui-autocomplete {
+            position: absolute;
+            cursor: default;
+            background: #f0ffff;
+            max-height: 200px;
+            overflow-y: auto;
+            /* prevent horizontal scrollbar */
+            overflow-x: hidden;
+            /* add padding to account for vertical scrollbar */
+            padding-right: 20px;
+        }
+    </style>
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+
+
+
+<script src="../../Scripts/angularjs/1.0.5/angular.js"></script>

@@ -1,0 +1,326 @@
+a {
+    color: #ff962f;
+}
+a:hover {
+    color: #ff962f;
+    text-decoration: none;
+}
+body {
+    background: url('../../images/bg2.png');
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+.btn {
+    background: #fff;
+    color: #333;
+}
+.dropdown-menu {
+    background: #fff;
+}
+.container, .row {
+    padding: 0px !important;
+}
+.line {
+    color: #eaecec;
+}
+.sidebar_divider {
+    border-top: 1px solid #e38969;
+    width: 100%;
+}
+hr {
+    color: #eaecec;
+}
+#header .logo {
+    background: #d75629;
+    height: 60px;
+}
+#header .logo h1::first-letter {
+    color: #ffffff;
+}
+#header .logo h1 {
+    color: #f3f3f3;
+    font-size: 20px;
+    text-align: center;
+}
+#header h1 {
+    color: #808080;
+    font-size: 18px;
+    padding-left: 3px;
+}
+#header #profile_photo {
+    float: right;
+    position: relative;
+    top: 10px;
+}
+#header #profile_photo img {
+    width: 34px;
+    height: 34px;
+    margin-right: 5px;
+}
+#header .searchBox {
+    padding-right: 10px;
+    color: #808080;
+}
+#header #responsiveMenu {
+    display: none;
+}
+#header #normalView {
+    cursor: pointer;
+}
+#header #pageHeader {
+    background: #fff;
+    height: 60px;
+}
+#sidebar {
+    background: #db673e;
+    padding: 10px;
+    position: relative;
+    top: -1px;
+    border-bottom: 4px solid #ac4520;
+}
+#sidebar ul {
+    padding: 0;
+    margin: 0;
+}
+#sidebar ul li {
+    list-style-type: none;
+    color: #f3f3f3;
+    padding: 8px 2px;
+    padding-left: 10px;
+    cursor: pointer;
+}
+#sidebar .active {
+    background: #eeeeee;
+    border-left: 4px solid #ff962f;
+    margin-left: -10px;
+    margin-right: -10px;
+    padding-left: 15px;
+    color: #333333;
+    font-weight: 400;
+}
+#sidebar ul li a:hover {
+    text-decoration: none;
+}
+#sidebar .subMenu {
+    display: none;
+    margin-top: 10px;
+}
+#sidebar .subMenu li {
+    position: relative;
+    z-index: 400;
+    list-style-type: none;
+    color: #333333;
+    background: #ebab94;
+    padding-left: 40px;
+    border-bottom: 1px solid #363a3b;
+}
+#sidebar .subMenu li:hover {
+    background: #d96035;
+}
+#sidebar .notification {
+    padding: 1px 6px;
+    background: #c24d24;
+    color: #ffffff;
+}
+#sidebar #developer {
+    width: 98%;
+    position: absolute;
+    bottom: 10px;
+}
+#sidebar #developer p {
+    color: #ffffff;
+    font-size: 12px;
+}
+#sidebar #developer p > span a {
+    color: #ffffff;
+    display: block;
+    font-weight: bold;
+}
+#sidebar #developer div#btnChat {
+    width: 50%;
+    float: left;
+}
+#sidebar #developer div#btnChat span {
+    color: #f3f3f3;
+}
+#sidebar #developer div#btnMail {
+    float: left;
+    width: 50%;
+}
+#sidebar #developer div#btnMail span {
+    color: #f3f3f3;
+}
+#sidebar #developer div#developerName {
+    width: 70%;
+    float: left;
+    cursor: pointer;
+}
+#sidebar #developer div#developerLogo {
+    width: 25%;
+    float: left;
+    cursor: pointer;
+}
+#sidebar #developer div#developerLogo img {
+    width: 82%;
+}
+#sidebar #developer div#pop-up {
+    display: none;
+    position: absolute;
+    left: 211px;
+    bottom: 0px;
+    width: 300px;
+    padding: 10px;
+    background: #eeeeee;
+    border: 1px solid #ffffff;
+    font-size: 90%;
+    border-radius: 2px;
+    z-index: 400;
+}
+#sidebar #developer #myIframeID {
+    border: 2px solid #ffffff;
+}
+#contentBox {
+    background: none repeat scroll 0% 0% #FFF;
+    border: 1px solid #FFF;
+    margin-left: -3px;
+    margin-top: 10px;
+    margin-right: -14px;
+    overflow: hidden;
+}
+#contentBox #homeTiles > div {
+    width: 45%;
+    height: 95px;
+    float: left;
+    background: #e38969;
+    margin: 10px;
+    padding: 10px;
+}
+#contentBox #homeTiles > div > p {
+    font-size: 35px;
+    color: #fff;
+    text-align: center;
+}
+#contentBox #homeTiles > div > div {
+    width: 100%;
+    background: #da643a;
+    color: #ffffff;
+    text-align: center;
+    padding: 4px;
+}
+#contentBox #homeTiles > div:nth-child(3) {
+    background: #ff962f;
+}
+#contentBox #homeTiles > div:nth-child(3) div {
+    background: #ff8916;
+}
+#contentBox #homeTiles > div:nth-child(4) {
+    background: #7bbf62;
+}
+#contentBox #homeTiles > div:nth-child(4) div {
+    background: #6cb850;
+}
+#contentBox #chart {
+    margin-top: 21px;
+}
+#contentBox #chart #homeChartSummary {
+    float: left;
+    width: 40%;
+    height: 223px;
+    background-color: #21638f;
+}
+#contentBox #chart #homeChartSummary .weeklyIncomeAmount {
+    color: #bfddf0;
+    font-size: 20px;
+    text-align: center;
+    padding-top: 10px;
+}
+#contentBox #chart #homeChartSummary p {
+    text-align: center;
+    color: #95c6e7;
+}
+#contentBox #chart #homeChartSummary table {
+    margin-top: 62px;
+    margin-left: 10px;
+}
+#contentBox #chart #homeChartSummary table tr:nth-child(1) td:nth-child(1) {
+    color: #e8f3fa;
+    font-weight: bold;
+}
+#contentBox #chart #homeChartSummary table tr:nth-child(2) td:nth-child(1) {
+    color: #e8f3fa;
+    font-weight: bold;
+}
+#contentBox #chart #homeChartSummary table tr:nth-child(3) td:nth-child(1) {
+    color: #e8f3fa;
+    font-weight: bold;
+}
+#contentBox #chart #homeChartSummary table td {
+    padding: 5px;
+    font-size: 12px;
+    color: #bfddf0;
+}
+#contentBox #chart #homeChart {
+    float: left;
+    width: 60%;
+    height: 223px;
+}
+#contentBox #chart .canvasjs-chart-credit {
+    display: none !important;
+}
+#contentHeaderBox {
+    height: 30px;
+    border-bottom: 1px solid #e5e7e7;
+}
+#contentHeaderBox h1 {
+    font-size: 16px;
+    color: #808080;
+    padding-left: 20px;
+    width: 90%;
+}
+#contentHeaderBox #editOption {
+    position: relative;
+    top: -38px;
+    right: 27px;
+    cursor: pointer;
+}
+#contentHeaderBox ul#contextMenu {
+    width: 200px;
+    height: 30px !important;
+    position: absolute;
+    display: none;
+    border: none;
+    box-shadow: none;
+}
+/* theme container start */
+
+#themeContainer {
+    margin: 10px !important;
+    width: 95%;
+    float: left;
+}
+#themesThum {
+    width: 100%;
+}
+#themesThum td {
+    width: 15%;
+    padding: 5px;
+}
+#themesThum img {
+    border: 2px solid #eee;
+    padding: 3px;
+    height: 120px;
+}
+#themesThum img:hover {
+    opacity: 0.4;
+    filter: alpha(opacity=40);
+    cursor: pointer;
+}
+#themesThum p {
+    padding: 2px 5px;
+    background: #333;
+    color: #fff;
+    margin-right: 9px;
+    width: 159px;
+}

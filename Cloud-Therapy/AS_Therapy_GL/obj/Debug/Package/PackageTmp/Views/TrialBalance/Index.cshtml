@@ -1,0 +1,394 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using System.Web.UI.WebControls
+@using AS_Therapy_GL.DataAccess
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+@{
+    ViewBag.Title = "Index";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    var LoggedCompId = HttpContext.Current.Session["loggedCompID"].ToString();
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+    Int64 loggedUserID = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+
+
+    var permission_Check = from m in db.AslRoleDbSet
+                           where m.COMPID == compid && m.USERID == loggedUserID
+                               && m.CONTROLLERNAME == "TrialBalance" && m.ACTIONNAME == "Index"
+                           select m;
+    var Status = "";
+    foreach (var check in permission_Check)
+    {
+        Status = check.STATUS;
+    }
+
+    if (Status == "A")
+    {
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+    decimal sumcredit = 0, sumdebit = 0, result = 0, debitamount = 0, creditamount = 0, totaldebit = 0, totalcredit = 0, subDebit = 0, SubCredit = 0;
+    //string tdebit = "", tcredit = "";
+}
+
+<link href="~/Content/bootstrap%20datepicker%20css/datepicker.css" rel="stylesheet" />
+<link href="~/Content/bootstrap%20datepicker%20css/datepicker3.css" rel="stylesheet" />
+<script src="~/Scripts/bootstrap-datepicker.js"></script>
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.AGlMaster.COMPID, new { id = "txtCompId", @Value = LoggedCompId })
+    @*@Html.HiddenFor(model => model.AGlMaster.DEBITCD, new { id = "txtHeadId", @Value = TempData["HeadCD"] })*@
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Trial Balance</h1>
+    </div>
+    <br />
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-1">@Html.Label("name", "Date", htmlAttributes: new { @class = "control-label" })</div>
+                <div class="col-md-3">
+                    @if (TempData["Trial_Balance_Date"] != null)
+                    {
+                        @Html.TextBoxFor(model => model.AGlMaster.TRANSDT, new { @class = "form-control input-sm", id = "idFromdate", @Value = TempData["Trial_Balance_Date"] })
+
+                    }
+                    else
+                    {
+                        @Html.TextBoxFor(model => model.AGlMaster.TRANSDT, new { @class = "form-control input-sm", id = "idFromdate", @Value = currentDateTime.ToString("dd-MMM-yyyy") })
+
+                    }
+                </div>
+                <div class="col-md-1">
+                    <input id="SubmitId" type="submit" class="btn btn-info" value="Show" name="command" />
+                </div>
+                <div class="col-md-1">
+                    <input id="SubmitId" type="submit" class="btn btn-info" value="Print" name="command" formtarget="_blank" />
+                </div>
+            </div>
+            @{
+                    PageModel pass_model = (PageModel)TempData["Trial Balance"];
+                    if (pass_model != null)
+                    {
+                        var Date = pass_model.AGlMaster.TRANSDT;
+                        string date = Convert.ToString(Date);
+                        DateTime parseDate = DateTime.Parse(date);
+                        string DateS = parseDate.ToString("dd-MMM-yyyy");
+
+                        Int64 minHeadCD = Convert.ToInt64((from m in db.GlAccharmstDbSet where m.COMPID == compid select m.HEADCD).Min());
+                        Int64 maxHeadCD = Convert.ToInt64((from m in db.GlAccharmstDbSet where m.COMPID == compid select m.HEADCD).Max());
+
+                        <br />
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="panel panel-primary">
+                                    <div class="panel-heading">Trial Balance</div>
+                                    <div class="panel-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-condensed" style="border-collapse:collapse;">
+                                                <thead style="background-color: #DFF0D8;">
+                                                    <tr>
+                                                        @*<th>&nbsp;</th>*@
+                                                        <th colspan="4" style="text-align: left">Head Description</th>
+                                                        <th colspan="4" style="text-align: right">Debit Balance</th>
+                                                        <th colspan="4" style="text-align: right">Credit Balance</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @for (Int64 z = minHeadCD; z <= maxHeadCD; z++)
+                                                    {
+                                                        Int64 Current_HeadCD = z;
+
+                                                        System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+                                                        string query = string.Format(
+                                                            @"SELECT C.DEBITCD, GL_ACCHART.ACCOUNTNM, C.DEBIT, C.CREDIT ,GL_ACCHART.HEADTP, GL_ACCHARMST.HEADNM, GL_ACCHARMST.HEADCD
+                                                FROM (SELECT DEBITCD, (CASE WHEN a.BAMT > 0 THEN a.BAMT ELSE 0 END) AS DEBIT,
+                                                (CASE WHEN a.BAMT < 0 THEN a.BAMT * - 1 ELSE 0 END) AS CREDIT
+                                                FROM (SELECT DEBITCD, SUM(ISNULL(DEBITAMT, 0)) - SUM(ISNULL(CREDITAMT, 0)) AS BAMT
+                                                FROM  GL_MASTER
+                                                WHERE (SUBSTRING(cast(DEBITCD as nvarchar(20)), 1, 1) IN ('1', '4')) AND (TRANSDT <= '{1}') and COMPID='{0}'
+                                                GROUP BY DEBITCD) AS a
+                                                UNION
+                                                SELECT DEBITCD, (CASE WHEN b.BAMT < 0 THEN b.BAMT * - 1 ELSE 0 END) AS DEBIT,
+                                                (CASE WHEN b.BAMT > 0 THEN B.BAMT ELSE 0 END) AS CREDIT
+                                                FROM (SELECT DEBITCD, SUM(ISNULL(CREDITAMT, 0)) - SUM(ISNULL(DEBITAMT, 0)) AS BAMT
+                                                FROM GL_MASTER AS GL_MASTER_1
+                                                WHERE (SUBSTRING(cast(DEBITCD as nvarchar(20)), 1, 1) IN ('2', '3')) AND (TRANSDT <= '{1}')  and COMPID='{0}'
+                                                GROUP BY DEBITCD) AS b) AS C INNER JOIN
+                                                GL_ACCHART ON C.DEBITCD = GL_ACCHART.ACCOUNTCD and GL_ACCHART.COMPID = '{0}'
+                                                Inner join GL_ACCHARMST on GL_ACCHARMST.HEADCD='{2}' and GL_ACCHART.HEADCD=GL_ACCHARMST.HEADCD and GL_ACCHART.COMPID = GL_ACCHARMST.COMPID
+                                                and GL_ACCHARMST.COMPID = '{0}'
+                                                order by GL_ACCHART.ACCOUNTNM",
+                                                            compid, DateS, Current_HeadCD);
+                                                        System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn);
+                                                        conn.Open();
+                                                        SqlDataAdapter da = new SqlDataAdapter(cmd);
+                                                        DataTable ds = new DataTable();
+                                                        da.Fill(ds);
+
+                                                        string AccountName = "", HeadName = "", HeadCD = "", devitCD = ""; 
+                                                        Decimal DEBIT = 0, CREDIT = 0;
+
+                                                        if (ds.Rows.Count != 0)
+                                                        {
+                                                            subDebit = 0;
+                                                            SubCredit = 0;
+                                                            devitCD = "";
+                                                            foreach (DataRow row in ds.Rows)
+                                                            {
+                                                                DEBIT = Convert.ToDecimal(row["DEBIT"].ToString());
+                                                                CREDIT = Convert.ToDecimal(row["CREDIT"].ToString());
+                                                                subDebit = Convert.ToDecimal(subDebit + DEBIT);
+                                                                SubCredit = Convert.ToDecimal(SubCredit + CREDIT);
+                                                            }
+
+                                                            foreach (DataRow row in ds.Rows)
+                                                            {
+                                                                HeadCD = row["HEADCD"].ToString();
+                                                                HeadName = row["HEADNM"].ToString();
+                                                                string result_subDebit = "", result_SubCredit = "";
+                                                                if (subDebit >= 0)
+                                                                {
+                                                                    string convertcurrentAmount = Convert.ToString(subDebit);
+                                                                    result_subDebit = CommainAmount.AmountwithComma(convertcurrentAmount);
+                                                                }
+                                                                else
+                                                                {
+                                                                    int aa = Convert.ToString(subDebit).Length;
+                                                                    string convertcurrentAmount = Convert.ToString(subDebit).Substring(1, aa - 1);
+                                                                    result_subDebit = CommainAmount.AmountwithComma(convertcurrentAmount);
+                                                                    result_subDebit = "-" + result_subDebit;
+                                                                }
+
+                                                                if (SubCredit >= 0)
+                                                                {
+                                                                    string convertcurrentAmount = Convert.ToString(SubCredit);
+                                                                    result_SubCredit = CommainAmount.AmountwithComma(convertcurrentAmount);
+                                                                }
+                                                                else
+                                                                {
+                                                                    int aa = Convert.ToString(SubCredit).Length;
+                                                                    string convertcurrentAmount = Convert.ToString(SubCredit).Substring(1, aa - 1);
+                                                                    result_SubCredit = CommainAmount.AmountwithComma(convertcurrentAmount);
+                                                                    result_SubCredit = "-" + result_SubCredit;
+                                                                }
+
+                                                                <tr data-toggle="collapse" data-target="#demo1_@HeadCD" class="accordion-toggle">
+                                                                    @*<th><span class="glyphicon glyphicon-eye-open"></span></th>*@
+                                                                    <th colspan="4" style="text-align: left">@HeadName</th>
+                                                                    <th colspan="4" style="text-align: right">@result_subDebit</th>
+                                                                    <th colspan="4" style="text-align: right">@result_SubCredit</th>
+                                                                </tr>
+                                                                break;
+                                                            }
+
+                                                            <tr>
+                                                                <td colspan="12" class="hiddenRow">
+                                                                    <div class="accordian-body collapse" id="demo1_@HeadCD">
+                                                                        <table class="table table-striped" style="border: 1px solid rgba(46, 78, 194, 0.32); box-shadow: 0px 3px 9px #888888; margin-bottom: 6px;">
+                                                                            @*<thead>
+                                                                                    <tr><td><a href="WorkloadURL">Workload link</a></td><td>Bandwidth: Dandwidth Details</td><td>OBS Endpoint: end point</td></tr>
+                                                                                    <tr><th>Access Key</th><th>Secret Key</th><th>Status </th><th> Created</th><th> Expires</th><th>Actions</th></tr>
+                                                                                </thead>*@
+
+                                                                            @foreach (DataRow row in ds.Rows)
+                                                                            {
+                                                                                devitCD = row["DEBITCD"].ToString();
+                                                                                AccountName = row["ACCOUNTNM"].ToString();
+                                                                                DEBIT = Convert.ToDecimal(row["DEBIT"].ToString());
+                                                                                CREDIT = Convert.ToDecimal(row["CREDIT"].ToString());
+
+                                                                                string result_Debit = "", result_Credit = "";
+                                                                                if (DEBIT >= 0)
+                                                                                {
+                                                                                    string convertcurrentAmount = Convert.ToString(DEBIT);
+                                                                                    result_Debit = CommainAmount.AmountwithComma(convertcurrentAmount);
+                                                                                }
+                                                                                else
+                                                                                {
+                                                                                    int aa = Convert.ToString(DEBIT).Length;
+                                                                                    string convertcurrentAmount = Convert.ToString(DEBIT).Substring(1, aa - 1);
+                                                                                    result_Debit = CommainAmount.AmountwithComma(convertcurrentAmount);
+                                                                                    result_Debit = "-" + result_Debit;
+                                                                                }
+
+                                                                                if (CREDIT >= 0)
+                                                                                {
+                                                                                    string convertcurrentAmount = Convert.ToString(CREDIT);
+                                                                                    result_Credit = CommainAmount.AmountwithComma(convertcurrentAmount);
+                                                                                }
+                                                                                else
+                                                                                {
+                                                                                    int aa = Convert.ToString(CREDIT).Length;
+                                                                                    string convertcurrentAmount = Convert.ToString(CREDIT).Substring(1, aa - 1);
+                                                                                    result_Credit = CommainAmount.AmountwithComma(convertcurrentAmount);
+                                                                                    result_Credit = "-" + result_Credit;
+                                                                                }
+                                                                                <tbody>
+                                                                                    <tr>
+                                                                                        @*<td>&nbsp;</td>*@
+                                                                                        <th style="text-align: left;width: 40%">
+                                                                                            <a href="@Url.Action("RowWiseLinkPost", new
+                                                                                                           {
+                                                                                                               COMPID = compid,
+                                                                                                               DEBITCD = devitCD,
+                                                                                                               ACCOUNTNM = AccountName,
+                                                                                                           })" target="_blank" style="color: #AB0707">
+                                                                                                @AccountName
+                                                                                            </a>
+                                                                                        </th>
+                                                                                        <td style="text-align: right;width: 25%">@result_Debit</td>
+                                                                                        <td style="text-align: right;width: 25%">@result_Credit</td>
+                                                                                    </tr>
+                                                                                </tbody>
+                                                                                totaldebit = Convert.ToDecimal(totaldebit + DEBIT);
+                                                                                totalcredit = Convert.ToDecimal(totalcredit + CREDIT);
+                                                                            }
+
+
+                                                                        </table>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                        conn.Close();
+                                                    }
+
+                                                    <tr>
+                                                        @*<td>&nbsp;</td>*@
+                                                        <td colspan="4" style="text-align: right">Total : </td>
+                                                        @{
+
+                                                    string result_TotalDebit = "", result_TotalCredit = "";
+                                                    if (totaldebit >= 0)
+                                                    {
+                                                        string convertcurrentAmount = Convert.ToString(totaldebit);
+                                                        result_TotalDebit = CommainAmount.AmountwithComma(convertcurrentAmount);
+                                                    }
+                                                    else
+                                                    {
+                                                        int aa = Convert.ToString(totaldebit).Length;
+                                                        string convertcurrentAmount = Convert.ToString(totaldebit).Substring(1, aa - 1);
+                                                        result_TotalDebit = CommainAmount.AmountwithComma(convertcurrentAmount);
+                                                        result_TotalDebit = "-" + result_TotalDebit;
+                                                    }
+
+                                                    if (totalcredit >= 0)
+                                                    {
+                                                        string convertcurrentAmount = Convert.ToString(totalcredit);
+                                                        result_TotalCredit = CommainAmount.AmountwithComma(convertcurrentAmount);
+                                                    }
+                                                    else
+                                                    {
+                                                        int aa = Convert.ToString(totalcredit).Length;
+                                                        string convertcurrentAmount = Convert.ToString(totalcredit).Substring(1, aa - 1);
+                                                        result_TotalCredit = CommainAmount.AmountwithComma(convertcurrentAmount);
+                                                        result_TotalCredit = "-" + result_TotalCredit;
+                                                    }
+
+                                                    //string convertdebit = Convert.ToString(totaldebit);
+                                                    //tdebit = CommainAmount.AmountwithComma(convertdebit);
+
+                                                    //string convertcredit = Convert.ToString(totalcredit);
+                                                    //tcredit = CommainAmount.AmountwithComma(convertcredit);
+
+                                                        }
+                                                        <td colspan="4" style="text-align: right">@result_TotalDebit</td>
+                                                        <td colspan="4" style="text-align: right">@result_TotalCredit</td>
+                                                    </tr>
+                                                </tbody>
+
+                                            </table>
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    }
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+        </div>
+    </div>
+
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#idFromdate').datepicker({
+                format: "dd-M-yyyy",
+                autoclose: true,
+                todayHighlight: true,
+                showOnFocus: true,
+            }).on('show', function (e) {
+                if (e.date) {
+                    $(this).data('stickyDate', e.date);
+                }
+                else {
+                    $(this).data('stickyDate', null);
+                }
+            }).on('hide', function (e) {
+                var stickyDate = $(this).data('stickyDate');
+
+                if (!e.date && stickyDate) {
+                    $(this).datepicker('setDate', stickyDate);
+                    $(this).data('stickyDate', null);
+                }
+                document.getElementById("SubmitId").focus();
+            });
+
+
+        });
+    </script>
+
+
+}
+
+
+

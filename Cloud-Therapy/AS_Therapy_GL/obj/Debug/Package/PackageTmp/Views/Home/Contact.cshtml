@@ -1,0 +1,242 @@
+﻿@model AS_Therapy_GL.Models.RoleModel
+@{
+    ViewBag.Title = "Contact";
+}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Alchemy Software | Cloud Therapy</title>
+
+    <!-- stylesheets -->
+    <link href="~/Content/homeDesign/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/Content/homeDesign/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="~/Content/homeDesign/css/animate.css" rel="stylesheet" />
+    <link href="~/Content/homeDesign/owl-carousel/owl.carousel.css" rel="stylesheet" />
+    <link href="~/Content/homeDesign/owl-carousel/owl.theme.css" rel="stylesheet" />
+    <link href="~/Content/homeDesign/css/style.css" rel="stylesheet" />
+    <!-- end stylesheets -->
+    <!-- js libray -->
+    <script src="~/Content/homeDesign/js/jquery-2.1.3.js"></script>
+</head>
+<body>
+    <!--header start-->
+    <header>
+        <section id="header">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="col-md-3" id="logo">
+                            <!-- <a href="index.php"><img src="images/logo.png" alt="rs" /></a> -->
+                            <a href="../Home/" style="text-decoration: none;"><h1>Cloud Therapy</h1></a>
+                        </div>
+                        <!--left menu-->
+                        <div class="col-md-5 col-xs-12 animated fadeIn" id="leftMenu">
+                            <ul>
+                                <li><a href="../Home/">Home</a></li>
+                                <li>@Html.ActionLink("About", "About", "Home")</li>
+                                <li>@Html.ActionLink("Faq", "Faq", "Home")</li>
+                                <li class="active">@Html.ActionLink("Contact", "Contact", "Home")</li>
+                                <!--<li> <a href="#" style="padding: 13px;"><img src="images/facebook.png" alt="facebook"></a></li>-->
+
+                            </ul>
+                        </div>
+                        <!--end left menu-->
+                        <!--menu right-->
+                        <div class="col-md-4 col-xs-10 pull-right text-left" id="rightMenu">
+                            <ul>
+
+                                <li><a href="../Login/"> Login</a></li>
+                                <li>
+                                    <a href="https://www.facebook.com/AlchemySoftware" target="_blank"> <i class="fa fa-facebook"></i></a>
+                                    <a href="https://twitter.com/alchemybd" target="_blank"> <i class="fa fa-twitter"></i></a>
+                                    <a href="https://plus.google.com/100639053145643474788" target="_blank"> <i class="fa fa-google-plus"></i></a>
+                                </li>
+                                <!-- <li>
+                                    <a href="#" class=""> <i class="fa fa-facebook"></i></a>
+                                    <a href="#" class=""> <i class="fa fa-twitter"></i></a>
+                                    <a href="#" class=""> <i class="fa fa-google-plus"></i></a>
+                                </li> -->
+                                <!-- <li><a href="contact.php" class="">Request for DEMO : +88 01988 844 987</a></li> -->
+                            </ul>
+                        </div>
+                        <!--end menu right-->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </header>
+    <!--header end-->
+
+
+    <section class="fow-fluid" id="contact">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true)
+                        <div class="col-md-8">
+                            <h2>Place your message</h2>
+                            <form>
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        @Html.TextBoxFor(m => m.Name, htmlAttributes: new { @class = "form-control", placeholder = "Name" })
+                                        @*<input class="form-control" type="text" placeholder="Name">*@
+                                    </div>
+                                </div>
+                                <br>
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        @Html.TextBoxFor(m => m.Email, htmlAttributes: new { @class = "form-control", placeholder = "Email" })
+                                        @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
+                                        @*<input class="form-control" type="text" placeholder="Email">*@
+                                    </div>
+                                </div>
+                                <br>
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        @Html.TextBoxFor(m => m.Phone, htmlAttributes: new { @class = "form-control", placeholder = "Phone" })
+                                        @Html.ValidationMessageFor(model => model.Phone, "", new { @class = "text-danger" })
+                                        @*<input class="form-control" type="text" placeholder="Phone">*@
+                                    </div>
+                                </div>
+                                <br>
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        @Html.TextAreaFor(m => m.Message, htmlAttributes: new { @class = "form-control", placeholder = "Type your message here...", rows = "9" })
+                                        @*<textarea placeholder="Type your message here..." class="form-control" rows="9"></textarea>*@
+                                    </div>
+                                </div>
+                                <br>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        @*<label class="checkbox"><input type="checkbox"> Sign up for newsletter</label>*@
+                                    </div>
+                                    <div class="col-sm-6 text-right">
+                                        <input class="btn" type="submit" value="Send message" style="width: 40%;background-color: #5cb85c;border-color: #4cae4c;color: white;">
+                                    </div>
+                                </div>
+                            </form>
+
+                        </div> <!-- contact form end -->
+                    }
+                    @*<div class="col-md-5">
+                            <h2>Place your message</h2>
+                            <form action="" method="">
+                                <p><input type="text" class="form-control" placeholder="Enter your name"></p>
+                                <p><input type="text" class="form-control" placeholder="Enter your email"></p>
+                                <p><input type="text" class="form-control" placeholder="Enter your subject"></p>
+                                <p><textarea name="" id="" cols="30" rows="10" class="form-control" placeholder="Enter your message"></textarea></p>
+                                <input type="submit" class="btn" value="Send">
+
+                            </form>
+
+                        </div>*@ <!-- contact form end -->
+                    <div class="col-md-4 pull-right" id="address">
+                        <h2>Contact Details</h2>
+                        <a href="#">Dhaka Office</a>
+                        <p>147/A/1 (3rd Floor), Old Airport Road</p>
+                        <p>Bijoy Shoroni, Tejgaon, Dhaka-1215, Bangladesh</p>
+                        <a href="#">Chittagong Office</a>
+                        <p>1047, O.R. Nizam Road,</p>
+                        <p>Suborna R/A, Chittagong-4000, Bangladesh.</p>
+                        <h4>Contact No</h4>
+                        <p>+880-1925 444777, +880-1725 388391</p>
+                        <p>+880-1925 444999, +880-1816 910849</p>
+                        <h4>E-mail:</h4>
+                        <p>info@alchemy-bd.com</p>
+                        <p>alchemysoftware@yahoo.com</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="row-fluid">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h2>Location of Chittagong Office</h2>
+                    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+                    <div style="overflow:hidden;height:300px;width:99%;">
+                        <div id="gmap_canvas1" style="height:300px;width:99%;"></div>
+                        <style>
+                            #gmap_canvas img {
+                                max-width: none !important;
+                                background: none !important;
+                            }
+                        </style><a class="google-map-code" href="http://wordpress-themes.org" id="get-map-data">wordpress</a>
+                    </div>
+                    <script type="text/javascript">
+                        function init_map() {
+                            var myOptions = {
+                                zoom: 16,
+                                center: new google.maps.LatLng(22.359960451989544, 91.82734947686845),
+                                mapTypeId: google.maps.MapTypeId.ROADMAP
+                            };
+                            map = new google.maps.Map(document.getElementById("gmap_canvas1"), myOptions);
+                            marker = new google.maps.Marker({
+                                map: map,
+                                position: new google.maps.LatLng(22.359960451989544, 91.82734947686845)
+                            });
+                            infowindow = new google.maps.InfoWindow({
+                                content: "<b>1047, O. R. NIZAM ROAD, 1ST FLOOR,</b><br/>GOLPAHAR, CHITTAGONG<br/>4000 CHITTAGONG"
+                            });
+                            google.maps.event.addListener(marker, "click", function () {
+                                infowindow.open(map, marker);
+                            });
+                            infowindow.open(map, marker);
+                        }
+                        google.maps.event.addDomListener(window, 'load', init_map);
+                    </script>
+
+                    <br>
+                </div>
+
+                <div class="col-md-6">
+                    <h2>Location of Dhaka Office</h2>
+
+                    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script><div style="overflow:hidden;height:300px;width:99%;">
+                        <div id="gmap_canvas2" style="height:300px;width:99%;"></div>
+                        <style>
+                            #gmap_canvas img {
+                                max-width: none !important;
+                                background: none !important;
+                            }
+                        </style><a class="google-map-code" href="http://www.themecircle.net" id="get-map-data">themecircle.net</a>
+                    </div>
+                    <script type="text/javascript"> function init_map() { var myOptions = { zoom: 18, center: new google.maps.LatLng(23.763187696481317, 90.3889076563446), mapTypeId: google.maps.MapTypeId.ROADMAP }; map = new google.maps.Map(document.getElementById("gmap_canvas2"), myOptions); marker = new google.maps.Marker({ map: map, position: new google.maps.LatLng(23.763187696481317, 90.3889076563446) }); infowindow = new google.maps.InfoWindow({ content: "<b>147/A/1 (3rd Floor), Bijoy Sarani,</b><br/>Old Airport Road, Tejgaon, Dhaka-1215<br/> Dhaka" }); google.maps.event.addListener(marker, "click", function () { infowindow.open(map, marker); }); infowindow.open(map, marker); } google.maps.event.addDomListener(window, 'load', init_map);</script>
+
+
+                    <br>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!--footer part-->
+    <footer>
+        <section id="footer">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <p>Developed By : <a href="http://www.alchemy-bd.com" target="_blank">Alchemy Software</a></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </footer>
+    <!--end footer part-->
+    <a href="#" id="backToTop"><i data-toggle="tooltip" data-placement="top" title="Go to top" class="fa  fa-chevron-circle-up fa-2x"></i></a>
+    <!-- other scripts -->
+    <script src="~/Content/homeDesign/js/bootstrap.min.js"></script>
+    <script src="~/Content/homeDesign/owl-carousel/owl.carousel.js"></script>
+    <script src="~/Content/homeDesign/js/jquery.cookie.js"></script>
+    <script src="~/Content/homeDesign/js/functions.js"></script>
+    <!-- end other scripts -->
+</body>
+</html>

@@ -1,0 +1,783 @@
+﻿@using System.Web.Services.Discovery
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+
+@{
+    ViewBag.Title = "Index";
+    //if (System.Web.HttpContext.Current.Request.Cookies["CI"] == null)
+    //{
+    //    Response.Redirect(Url.Action("Index", "Login"));
+    //}
+
+    //var LoggedUserTp = System.Web.HttpContext.Current.Request.Cookies["UT"].Value;
+    //var LoggedCompId = System.Web.HttpContext.Current.Request.Cookies["CI"].Value;
+    //var LoggedUserStatus = System.Web.HttpContext.Current.Request.Cookies["US"].Value;
+    //var LoggedCompanyStatus = System.Web.HttpContext.Current.Request.Cookies["CS"].Value;
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedCompId = HttpContext.Current.Session["loggedCompID"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    Int64 compid = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"].ToString());
+    Int64 loggedUserID = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+    var permission_Check = from m in db.AslRoleDbSet where m.COMPID == compid && m.USERID == loggedUserID && m.CONTROLLERNAME == "BuyReturn" select m;
+    var createStatus = "";
+    var updateStatus = "";
+    foreach (var check in permission_Check)
+    {
+        createStatus = check.INSERTR;
+        updateStatus = check.UPDATER;
+    }
+
+    if (createStatus == "A")
+    {
+
+    }
+    else if (updateStatus == "A")
+    {
+        Response.Redirect("~/BuyReturn/EditOrder");
+    }
+
+    if (createStatus == "I" && updateStatus == "I")
+    {
+        Response.Redirect("~/GraphView/Index");
+    }
+
+
+
+
+
+
+    //List<SelectListItem> itemType = new List<SelectListItem>();
+    //itemType.Add(new SelectListItem { Text = "Therapy", Value = "THERAPY" });
+    //itemType.Add(new SelectListItem { Text = "Accessories", Value = "ACCESSORIES" });
+
+
+
+    List<SelectListItem> storeList = new List<SelectListItem>();
+    var findStoreName = (from n in db.PST_PatientDbSet where n.COMPID == compid select n).ToList();
+    foreach (var m in findStoreName)
+    {
+        storeList.Add(new SelectListItem { Text = m.PATIENTNM, Value = m.PATIENTID.ToString() });
+    }
+
+
+
+    List<SelectListItem> PartyList = new List<SelectListItem>();
+    var findPartyID = (from n in db.GlAcchartDbSet where n.COMPID == compid select n).ToList();
+    Int64 headCD = 0;
+    foreach (var glAcchart in findPartyID)
+    {
+        headCD = Convert.ToInt64(glAcchart.HEADCD.ToString().Substring(3, 3));
+        if (headCD == 203)
+        {
+            PartyList.Add(new SelectListItem { Text = glAcchart.ACCOUNTNM, Value = glAcchart.ACCOUNTCD.ToString() });
+        }
+
+    }
+
+
+    Int64 transno = 0;
+    decimal totGross = 0;
+    decimal totAmt = 0;
+    int i = 1;
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+}
+
+
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+
+    @Html.HiddenFor(model => model.pst_Trans.COMPID, new { id = "txtCompId", @Value = LoggedCompId })
+    @Html.HiddenFor(model => model.pst_Trans.ITEMSL, new { id = "txtItemSl" })
+    @Html.HiddenFor(model => model.pst_Trans.ITEMID, new { id = "txtItemId" })
+    @*@Html.HiddenFor(model => model.pst_Trans.POSNID, new { id = "txtPosNid" })*@
+    <div id="contentHeaderBox">
+        <h1 style="padding-left: 16px;">Purchase Return - (Create)</h1>
+        <div class="btn-group pull-right" id="editOption">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                <i class="fa fa-cog"></i>
+            </button>
+            <ul class="dropdown-menu pull-right" style="" role="menu">
+                @if (createStatus == "A" && updateStatus == "A")
+                {
+                    <li><a href="@Url.Action("Index", "BuyReturn")"><i class="fa fa-plus"></i> Create</a></li>
+                    <li><a href="@Url.Action("EditOrder", "BuyReturn")"><i class="fa fa-edit"></i> Update</a></li>
+                }
+                else if (createStatus == "A")
+                {
+                    <li><a href="@Url.Action("Index", "BuyReturn")"><i class="fa fa-plus"></i> Create</a></li>
+                }
+                else if (updateStatus == "A")
+                {
+                    <li><a href="@Url.Action("EditOrder", "BuyReturn")"><i class="fa fa-edit"></i> Update</a></li>
+                }
+            </ul>
+        </div>
+
+    </div>
+
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="col-md-8">
+                @if (TempData["UpdatePermission"] != null)
+                {
+                    <h4 style="color: #C03523">@TempData["UpdatePermission"]</h4>
+                }
+                <div class="row">
+
+                    <div class="col-md-4">
+                        <span> <b>  Date</b></span>
+                        @if (TempData["transdate"] != null)
+                        {
+                            string date = TempData["transdate"].ToString();
+                            DateTime MyDateTime = DateTime.Parse(date);
+                            string Date = MyDateTime.ToString("dd-MMM-yyyy");
+                            @Html.TextBoxFor(model => model.pst_Trans.TRANSDT, new { @class = "form-control input-sm", @readonly = "readonly", @Value = Date })
+                        }
+                        else
+                        {
+                            @Html.TextBoxFor(model => model.pst_Trans.TRANSDT, new { @class = "form-control input-sm", @id = "txtdate", @Value = currentDateTime.ToString("dd-MMM-yyyy"), autofocus = true })
+                            if (ViewBag.errorDate != null)
+                            {
+                                <h6 style="color: #C03523">@ViewBag.errorDate</h6>
+                            }
+                        }
+                    </div>
+                    <div class="col-md-3">
+                        <span> <b>  Year</b></span>
+                        @if (TempData["transYear"] != null)
+                        {
+                            string year = TempData["transYear"].ToString();
+                            @Html.TextBoxFor(model => model.pst_Trans.TRANSYY, new { @class = "form-control input-sm", @readonly = "readonly", @Value = year })
+                        }
+                        else
+                        {
+                            @Html.TextBoxFor(model => model.pst_Trans.TRANSYY, new { @class = "form-control input-sm", @id = "txtYear", @readonly = "readonly", @Value = currentDateTime.ToString("yyyy") })
+                        }
+                    </div>
+
+                    <div class="col-md-5">
+                        <span> <b>  Memo No</b></span>
+                        @Html.TextBoxFor(model => model.pst_Trans.TRANSNO, new { id = "txtTransNo", @class = "form-control input-sm", @readonly = "readonly" })
+                    </div>
+                </div>
+
+                <div class="row">
+
+                    @*<div class="col-md-6">
+                            <span> <b>  Patient</b></span>
+                            @if (TempData["STOREID"] != null)
+                            {
+                                @Html.HiddenFor(model => model.Pst_Patient.PATIENTID, new { @class = "form-control input-sm" })
+                                Int64 patientid = Convert.ToInt64(TempData["STOREID"]);
+                                var PatientName = (from n in db.PST_PatientDbSet where n.COMPID == compid && n.PATIENTID == patientid select n).ToList();
+                                string patient_Name = "";
+                                foreach (var Name in PatientName)
+                                {
+                                    patient_Name = Name.PATIENTNM;
+                                }
+                                @Html.TextBoxFor(model => model.Pst_Patient.PATIENTNM, new { @class = "form-control input-sm", @readonly = "readonly", @Value = patient_Name })
+
+                            }
+                            else
+                            {
+                                @Html.DropDownListFor(model => model.Pst_Patient.PATIENTID, storeList, "--Select--", new { @class = "form-control input-sm", @id = "ddlstoreName" })
+                                if (ViewBag.errorPartyName != null)
+                                {
+                                    <h6 style="color: #C03523">@ViewBag.errorPartyName</h6>
+                                }
+                            }
+                        </div>*@
+                    <div class="col-md-6">
+                        <span> <b>  Supplier</b></span>
+                        @if (TempData["ACCOUNTCD"] != null)
+                        {
+                            @Html.HiddenFor(model => model.AGL_acchart.ACCOUNTCD, new { @class = "form-control input-sm" })
+                            Int64 PARTYID = Convert.ToInt64(TempData["ACCOUNTCD"]);
+                            var find_PartyID = (from n in db.GlAcchartDbSet where n.COMPID == compid && n.ACCOUNTCD == PARTYID select n).ToList();
+                            string partyName = "";
+                            foreach (var glAcchart in find_PartyID)
+                            {
+                                partyName = glAcchart.ACCOUNTNM;
+                            }
+                            @Html.TextBoxFor(model => model.AGL_acchart.ACCOUNTNM, new { @class = "form-control input-sm", @readonly = "readonly", @Value = partyName })
+
+                        }
+                        else
+                        {
+                            @Html.DropDownListFor(model => model.AGL_acchart.ACCOUNTCD, PartyList, "--Select--", new { id = "txtSupplier", @class = "form-control input-sm" })
+                            if (ViewBag.errorParty != null)
+                            {
+                                <h6 style="color: #C03523">@ViewBag.errorParty</h6>
+                            }
+                        }
+                    </div>
+                </div>
+
+                <br />
+
+                <div class="row">
+                    @Html.HiddenFor(model => model.pst_Trans.PST_TRANS_ID)
+
+                    <div class="col-md-3">
+                        <span> @Html.Label("name", "Item Type", htmlAttributes: new { @class = "control-label" })</span>
+                        @Html.TextBoxFor(model => model.pst_Trans.ITEMTP, new { id = "txt_itemType", @class = "form-control input-sm", @readonly = "readonly", @Value = "ACCESSORIES" })
+                    </div>
+                    <div class="col-md-6">
+                        <span> @Html.Label("name", "Item Name", htmlAttributes: new { @class = "control-label" })</span>
+                        @Html.TextBoxFor(model => model.PST_Item.ITEMNM, new { @class = "form-control input-sm", id = "txtItemNm" })
+                        @if (ViewBag.errorItemid != null)
+                        {
+                            <h6 style="color: #C03523">@ViewBag.errorItemid</h6>
+                        }
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3">
+                        <span>  @Html.Label("name", "Quantity", htmlAttributes: new { @class = "control-label" })</span>
+                        @Html.TextBoxFor(model => model.pst_Trans.QTY, new { @class = "form-control input-sm", id = "txtQty" })
+                        @if (ViewBag.errorQty != null)
+                        {
+                            <h6 style="color: #C03523">@ViewBag.errorQty</h6>
+                        }
+                    </div>
+
+                    @Html.TextBoxFor(model => model.pst_Trans.INSLTUDE, new { id = "latlon", style = "display: none;" })
+                    <input id="lat" type="hidden" />
+                    <input id="lon" type="hidden" />
+
+                    <div class="col-md-3">
+                        <span>  @Html.Label("name", "Rate", htmlAttributes: new { @class = "control-label" })</span>
+                        @Html.TextBoxFor(model => model.pst_Trans.RATE, new { @class = "form-control input-sm", id = "txtRate" })
+                    </div>
+                    <div class="col-md-3">
+                        <span>  @Html.Label("name", "Amount", htmlAttributes: new { @class = "control-label" })</span>
+                        @Html.TextBoxFor(model => model.pst_Trans.AMOUNT, new { @class = "form-control input-sm", id = "txtAmt", @readonly = "readonly" })
+                    </div>
+
+                    <div class="col-md-1" style="text-align: right">
+                        <br />
+                        <input type="submit" class="btn btn-info" value="Add" id="btnAdd" name="command" style="padding-left: 7px;padding-right: 7px;margin-left: -22px" />
+                    </div>
+
+                </div>
+
+                @if (ViewBag.InsertPermission != null)
+                {
+                    <div class="row">
+                        <div class="col-md-6"> </div>
+                        <div class="col-md-6"> <h5 style="color: #C03523; text-align: right">@ViewBag.InsertPermission</h5></div>
+                    </div>
+                }
+
+                <br />
+                <br />
+
+
+                @if (TempData["transno"] != null && TempData["transdate"] != null && TempData["transYear"] != null)
+                {
+                    string x = Convert.ToString(TempData["transdate"]);
+                    DateTime date = DateTime.Parse(x);
+                    transno = Convert.ToInt64(TempData["transno"]);
+
+                    Int64 transYear = Convert.ToInt64(TempData["transYear"]);
+
+                    var res = db.PST_ItemDbSet.Join(db.PST_TransDbSet, e => e.ITEMID, b => b.ITEMID,
+                        (e, b) => new
+                        {
+                            itemname = e.ITEMNM,
+                            PST_TRANSid = b.PST_TRANS_ID,
+                            ITEMSL = b.ITEMSL,
+                            ITEMID = b.ITEMID,
+                            QTY = b.QTY,
+                            RATE = b.RATE,
+                            AMOUNT = b.AMOUNT,
+                            REFPCNT = b.REFPCNT,
+                            REFAMT = b.REFAMT,
+                            TRANSNO = b.TRANSNO,
+                            TRANSDT = b.TRANSDT,
+                            b.TRANSYY,
+                            b.TRANSTP,
+                            COMPID = b.COMPID
+                        }).Where(eAndb => eAndb.TRANSNO == transno && eAndb.TRANSDT == date && eAndb.TRANSYY == transYear && eAndb.TRANSTP == "IRTB" && eAndb.COMPID == compid).OrderBy(e => e.ITEMSL);
+
+
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <tr>
+                                <td>
+                                    <h6>SL</h6>
+                                </td>
+                                <td>
+                                    <h6>Item Name</h6>
+                                </td>
+                                <td>
+                                    <h6>Quantity</h6>
+                                </td>
+                                <td>
+                                    <h6>Amount</h6>
+                                </td>
+
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            @foreach (var item in res)
+                            {
+                                <tr>
+                                    @Html.HiddenFor(model => item.PST_TRANSid, new { id = "txtID", @readonly = "readonly" })
+                                    @Html.HiddenFor(model => item.TRANSDT, new { id = "txtID", @readonly = "readonly" })
+                                    @Html.HiddenFor(model => item.TRANSYY, new { id = "txtID", @readonly = "readonly" })
+                                    @Html.HiddenFor(model => item.ITEMID, new { id = "txtItemId", @readonly = "readonly" })
+                                    @Html.HiddenFor(model => item.RATE, new { id = "txtRate", @readonly = "readonly" })
+                                    <td>
+                                        @Html.TextBoxFor(model => item.ITEMSL, new { style = "width:2em;", id = "txtItemSl", @readonly = "readonly" })
+                                    </td>
+                                    <td>
+                                        @Html.TextBoxFor(model => item.itemname, new { style = "width:12em;", id = "txtItemNm", @readonly = "readonly" })
+                                    </td>
+                                    <td>
+                                        @Html.TextBoxFor(model => item.QTY, new { style = "width:4em; text-align:right", id = "txtQty", @readonly = "readonly" })
+                                    </td>
+                                    <td>
+                                        @Html.TextBoxFor(model => item.AMOUNT, new { style = "width: 7em; text-align:right", id = "txtAmt", @readonly = "readonly" })
+                                    </td>
+                                    <td>
+                                        <span>
+                                            <a href="@Url.Action("OrderDelete", new { tid = item.PST_TRANSid, orderNo = item.TRANSNO,Date = item.TRANSDT,Year=item.TRANSYY, itemsl = item.ITEMSL, compid = item.COMPID, item })" class="btn btn-sm btn-danger">
+                                                <span class="glyphicon glyphicon-remove"></span>
+                                            </a>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span>
+                                            <a href="@Url.Action("OrderUpdate", new { tid = item.PST_TRANSid, orderNo = item.TRANSNO, Date = item.TRANSDT, Year = item.TRANSYY, itemsl = item.ITEMSL, itemId = item.ITEMID, item })" class="btn btn-sm btn-info">
+                                                <span class="glyphicon glyphicon-pencil"></span>
+                                            </a>
+                                        </span>
+                                    </td>
+                                </tr>
+                                //totGross = Convert.ToDecimal(totGross + item.GROSSAMT);
+                                totAmt = Convert.ToDecimal(totAmt + item.AMOUNT);
+                                i = i + 1;
+                            }
+                            <tr>
+                                <td></td>
+                                <td>Total</td>
+                                <td></td>
+                                <td>
+                                    @Html.TextBoxFor(model => model.Pst_Transmst.TOTAMT, new { style = "width:7em; text-align:right", id = "txtTotGrossAmt", @readonly = "readonly", @Value = totAmt })
+                                </td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped"></table>
+                    </div>
+                }
+            </div>
+
+
+            <div class="col-md-4">
+                <div class="panel panel-primary" style="margin-bottom: 0px">
+                    <div class="panel-heading">Payment Information</div>
+                </div>
+
+                <div class="well">
+                    <div class="table-responsive">
+                        @if (ViewBag.addItemList != null)
+                        {<table>
+                            <tr>
+                                <td>
+                                    <h6 style="color: #C03523">@ViewBag.addItemList</h6>
+                                </td>
+                            </tr>
+                        </table>
+                        }
+                        <table class="table table-hover">
+                            <tr>
+                                <td>
+                                    Total Amount
+                                </td>
+                                <td>
+                                    @Html.TextBoxFor(model => model.Pst_Transmst.TOTAMT, new { @style = "width:10em; text-align:right", id = "txtMstTotAmt", @readonly = "readonly", @Value = totAmt })
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Discount
+                                </td>
+                                <td>
+                                    @Html.TextBoxFor(model => model.Pst_Transmst.DISCOUNT, new { @style = "width:10em; text-align:right", id = "txtMstDiscAmt", @Value = 0 })
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Net Amount
+                                </td>
+                                <td>
+                                    @Html.TextBoxFor(model => model.Pst_Transmst.TOTNET, new { @style = "width:10em; text-align:right", id = "txtMstNetAmount", @readonly = "readonly", @Value = totAmt })
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Cash Amount
+                                </td>
+                                <td>
+                                    @Html.TextBoxFor(model => model.Pst_Transmst.AMTCASH, new { @style = "width:10em; text-align:right", id = "txtMstCashAmount", @Value = totAmt })
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Credit Amount
+                                </td>
+                                <td>
+                                    @Html.TextBoxFor(model => model.Pst_Transmst.AMTCREDIT, new { @style = "width:10em; text-align:right", id = "txtMstCreditAmount", @readonly = "readonly", @Value = 0 })
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Remarks
+                                </td>
+                                <td>
+                                    @Html.TextAreaFor(model => model.Pst_Transmst.REMARKS, new { @style = "width:10em; text-align:right", id = "txtMstRemarks" })
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table>
+                            <tr>
+                                <td style="width: 30%;"></td>
+                                <td>
+                                    <input type="submit" class="btn btn-danger" value="Save" id="btnComp" name="command" />
+                                    <input type="submit" id="POS_ButtonId" class="btn btn-primary" name="command" value="POS" data-toggle="tooltip" data-placement="bottom" title="Paper size small" formtarget="_blank" />
+                                    <input type="submit" id="A4_ButtonId" class="btn btn-success" name="command" value="A4" data-toggle="tooltip" data-placement="bottom" title="Paper size A4" formtarget="_blank" />
+                                </td>
+                            </tr>
+                        </table>
+
+
+                    </div>
+                </div>
+
+                @Html.TextBoxFor(model => model.Pst_Transmst.INSLTUDE, new { id = "latlon_Pst_Transmst", style = "display: none;" })
+                <input id="lat" type="hidden" />
+                <input id="lon" type="hidden" />
+
+            </div>
+        </div>
+    </div>
+
+
+                        //Latitute & longitude
+                        <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+                        <script language="javascript" type="text/javascript">
+                            $(function () {
+                                navigator.geolocation.getCurrentPosition(showPosition);
+                                //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+                                function showPosition(position) {
+                                    var coordinates = position.coords;
+                                    $("#lat").val(coordinates.latitude);
+                                    $("#lon").val(coordinates.longitude);
+
+                                    $("#latlon").val(
+                                        $("#lat").val() + "," + $("#lon").val()
+                                    );
+                                    $("#latlon_Pst_Transmst").val(
+                                      $("#lat").val() + "," + $("#lon").val()
+                                  );
+                                }
+                            });
+
+                            $(function () {
+                                $('[data-toggle="tooltip"]').tooltip();
+                            });
+                        </script>
+
+                        <script type="text/javascript">
+
+                            $(document).ready(function () {
+                                $('#txtItemNm').autocomplete(
+                                    {
+                                        source: function (request, response) {
+                                            $.ajax({
+                                                url: '@Url.Action("TagSearch", "BuyReturn")',
+                                                dataType: "json",
+                                                data: {
+                                                    term: request.term,
+                                                    changedDropDown: $('#txt_itemType').val()
+                                                },
+                                                success: function (data) {
+                                                    //response(data);
+                                                    response($.map(data, function (item) {
+                                                        return {
+                                                            label: item,
+                                                            value: item
+                                                        };
+                                                    }));
+                                                }
+                                            });
+                                        },
+
+                                        change: txtOneChanged,
+                                        select: function (event, ui) {
+                                            $("#txtItemNm").val(ui.item.label);
+                                            txtOneChanged();
+                                        },
+                                    });
+
+
+                                function txtOneChanged() {
+                                    var changedText = $("#txtItemNm").val();
+                                    var changeditemType = $("#txt_itemType").val();
+
+                                    var txtBox = document.getElementById('txtItemId');
+                                    //var txtPosNid = document.getElementById('txtPosNid');
+                                    var txtRate = document.getElementById('txtRate');
+                                    var txtqty = document.getElementById('txtQty');
+
+                                    $.getJSON(
+                                        '/BuyReturn/ItemNameChanged', { "ChangedText": changedText, "ChangeditemType": changeditemType },
+                                        function (result) {
+                                            txtBox.value = result.itemid;
+                                            //txtPosNid.value = result.POSNID;
+                                            txtRate.value = result.Rate;
+                                            txtqty.value = result.qty;
+
+                                            var myBox1 = document.getElementById('txtQty').value;
+                                            var myBox2 = document.getElementById('txtRate').value;
+                                            var txtAmt = document.getElementById('txtAmt');
+                                            var tottxtAmt = (myBox1 * myBox2);
+
+                                            txtAmt.value = tottxtAmt;
+                                            document.getElementById("txtQty").focus();
+                                        });
+                                };
+
+
+
+                                $("#txtQty").change(function () {
+
+                                    var myBox1 = document.getElementById('txtQty').value;
+                                    var myBox2 = document.getElementById('txtRate').value;
+                                    var txtAmt = document.getElementById('txtAmt');
+                                    var tottxtAmt = (myBox1 * myBox2);
+
+                                    txtAmt.value = tottxtAmt;
+                                    document.getElementById("btnAdd").focus();
+                                });
+
+
+
+
+
+                                $("#txtRate").change(function () {
+
+                                    var myBox1 = document.getElementById('txtQty').value;
+                                    var myBox2 = document.getElementById('txtRate').value;
+                                    var txtAmt = document.getElementById('txtAmt');
+                                    var tottxtAmt = (myBox1 * myBox2);
+
+                                    txtAmt.value = tottxtAmt;
+                                    document.getElementById("btnAdd").focus();
+                                });
+
+
+
+
+
+
+
+                                $("#btnAdd").change(function () {
+                                    document.getElementById("txtQty").focus();
+                                });
+
+
+
+                                //$("#txtMstDiscRate").change(function () {
+
+
+                                //    document.getElementById('txtMstDiscAmt').value = (document.getElementById('txtMstTotAmt').value * (document.getElementById('txtMstDiscRate').value / 100)).toFixed(2);
+                                //    document.getElementById('txtMstTotGross').value = (document.getElementById('txtMstTotAmt').value - document.getElementById('txtMstDiscAmt').value).toFixed(2);
+                                //    document.getElementById('txtMstVatAmt').value = (document.getElementById('txtMstTotGross').value * (document.getElementById('txtMstVatRT').value / 100)).toFixed(2);
+                                //    document.getElementById('txtMstNetAmount').value = (parseFloat(document.getElementById('txtMstTotGross').value) + parseFloat(document.getElementById('txtMstVatAmt').value) + parseFloat(document.getElementById('txtMstServiceAmt').value)).toFixed(2);
+                                //    document.getElementById('txtMstCashAmount').value = document.getElementById('txtMstNetAmount').value;
+                                //    document.getElementById('txtMstCreditAmount').value = (parseFloat(document.getElementById('txtMstNetAmount').value) - parseFloat(document.getElementById('txtMstCashAmount').value)).toFixed(2);
+                                //    document.getElementById("txtMstVatRT").focus();
+                                //});
+
+
+                                $("#txtMstDiscAmt").change(function () {
+
+                                    document.getElementById('txtMstNetAmount').value = (document.getElementById('txtMstTotAmt').value - document.getElementById('txtMstDiscAmt').value).toFixed(2);
+                                    document.getElementById('txtMstCashAmount').value = document.getElementById('txtMstNetAmount').value;
+                                    document.getElementById('txtMstCreditAmount').value = (parseFloat(document.getElementById('txtMstNetAmount').value) - parseFloat(document.getElementById('txtMstCashAmount').value)).toFixed(2);
+
+                                });
+
+
+                                //$("#txtMstVatRT").change(function () {
+
+                                //    document.getElementById('txtMstTotGross').value = (document.getElementById('txtMstTotAmt').value - document.getElementById('txtMstDiscAmt').value).toFixed(2);
+                                //    document.getElementById('txtMstVatAmt').value = (document.getElementById('txtMstTotGross').value * (document.getElementById('txtMstVatRT').value / 100)).toFixed(2);
+                                //    document.getElementById('txtMstNetAmount').value = (parseFloat(document.getElementById('txtMstTotGross').value) + parseFloat(document.getElementById('txtMstVatAmt').value) + parseFloat(document.getElementById('txtMstServiceAmt').value)).toFixed(2);
+                                //    document.getElementById('txtMstCashAmount').value = document.getElementById('txtMstNetAmount').value;
+                                //    document.getElementById('txtMstCreditAmount').value = (parseFloat(document.getElementById('txtMstNetAmount').value) - parseFloat(document.getElementById('txtMstCashAmount').value)).toFixed(2);
+                                //    document.getElementById("txtMstServiceAmt").focus();
+                                //});
+
+
+                                //$("#txtMstServiceAmt").change(function () {
+
+                                //    document.getElementById('txtMstTotGross').value = (document.getElementById('txtMstTotAmt').value - document.getElementById('txtMstDiscAmt').value).toFixed(2);
+                                //    document.getElementById('txtMstVatAmt').value = (document.getElementById('txtMstTotGross').value * (document.getElementById('txtMstVatRT').value / 100)).toFixed(2);
+                                //    document.getElementById('txtMstNetAmount').value = (parseFloat(document.getElementById('txtMstTotGross').value) + parseFloat(document.getElementById('txtMstVatAmt').value) + parseFloat(document.getElementById('txtMstServiceAmt').value)).toFixed(2);
+                                //    document.getElementById('txtMstCashAmount').value = document.getElementById('txtMstNetAmount').value;
+                                //    document.getElementById('txtMstCreditAmount').value = (parseFloat(document.getElementById('txtMstNetAmount').value) - parseFloat(document.getElementById('txtMstCashAmount').value)).toFixed(2);
+                                //    document.getElementById("txtMstCashAmount").focus();
+                                //});
+
+
+
+                                $("#txtMstCashAmount").change(function () {
+
+                                    document.getElementById('txtMstCreditAmount').value = (parseFloat(document.getElementById('txtMstNetAmount').value) - parseFloat(document.getElementById('txtMstCashAmount').value)).toFixed(2);
+                                    if (document.getElementById('txtMstCreditAmount').value < 0) {
+                                        document.getElementById('txtMstCreditAmount').value = 0;
+                                    }
+                                    document.getElementById("txtMstRemarks").focus();
+                                });
+
+
+
+
+                                $('#txtdate').datepicker({
+                                    dateFormat: "dd-M-yy", changeYear: true
+                                });
+
+
+
+
+                                $('#txtdate').change(function () {
+                                    //When the UserName (Dropdown list) changed then get the "User ID" from "ASLUSERCO" table
+                                    var changedtxt = $('#txtdate').val();
+                                    var txtYear = document.getElementById('txtYear');
+
+                                    $("#txtYear").val(" ");
+                                    $.getJSON(
+                                        "/BuyReturn/DateChanged_getYear", { "Changedtxt": changedtxt },
+                                        function (myData) {
+                                            txtYear.value = myData.YEAR;
+                                            document.getElementById("txtSupplier").focus();
+                                        });
+                                });
+
+
+                                $('#POS_ButtonId').click(function () {
+                                    setTimeout(function () { window.location.reload(); }, 100);
+                                });
+                                $('#A4_ButtonId').click(function () {
+                                    setTimeout(function () { window.location.reload(); }, 100);
+                                });
+
+                            });
+
+
+                        </script>
+
+
+                        <style type="text/css">
+                            .ui-autocomplete {
+                                position: absolute;
+                                cursor: default;
+                                background: #f0ffff;
+                                max-height: 200px;
+                                overflow-y: auto;
+                                /* prevent horizontal scrollbar */
+                                overflow-x: hidden;
+                                /* add padding to account for vertical scrollbar */
+                                padding-right: 20px;
+                            }
+
+
+                            /*html .ui-autocomplete {
+                                    width: 1px;
+                                }
+
+                                .ui-menu {
+                                    list-style: none;
+                                    padding: 2px;
+                                    margin: 0;
+                                    display: block;
+                                    float: left;
+                                }
+
+                                    .ui-menu .ui-menu {
+                                        margin-top: -3px;
+                                    }
+
+                                    .ui-menu .ui-menu-item {
+                                        margin: 0;
+                                        padding: 0;
+                                        zoom: 1;
+                                        float: left;
+                                        clear: left;
+                                        width: 100%;
+                                    }
+
+                                        .ui-menu .ui-menu-item a {
+                                            text-decoration: none;
+                                            display: block;
+                                            padding: .2em .4em;
+                                            line-height: 1.5;
+                                            zoom: 1;
+                                        }
+
+                                            .ui-menu .ui-menu-item a.ui-state-hover,
+                                            .ui-menu .ui-menu-item a.ui-state-active {
+                                                font-weight: normal;
+                                                margin: -1px;
+                                            }*/
+                        </style>
+
+
+}
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+
+

@@ -1,0 +1,256 @@
+﻿@using AS_Therapy_GL.Models
+@using AS_Therapy_GL.Models.DTO
+@model AS_Therapy_GL.Models.ASL.ASL_PCONTACTS
+
+@{
+    ViewBag.Title = "UploadDocument";
+
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    Int64 LoggedUserId = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+    Int64 LoggedCompId = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"].ToString());
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+
+
+    List<SelectListItem> listOfGroupame = new List<SelectListItem>();
+    var result = (from n in db.UploadGroupDbSet
+                  where n.COMPID == LoggedCompId
+                  select n).ToList();
+
+    foreach (var n in result)
+    {
+        listOfGroupame.Add(new SelectListItem { Text = n.GROUPNM, Value = n.GROUPID.ToString() });
+    }
+
+
+    var permission_Check = from m in db.AslRoleDbSet where m.COMPID == LoggedCompId && m.USERID == LoggedUserId && m.CONTROLLERNAME == "uploadcontact" select m;
+    var Status = "";
+    foreach (var check in permission_Check)
+    {
+        Status = check.STATUS;
+    }
+
+
+    if (Status == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+}
+
+
+@using (Html.BeginForm("UploadDocument", "UploadContact", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.COMPID, new { @Value = LoggedCompId })
+    @Html.HiddenFor(model => model.INSUSERID, new { @Value = LoggedUserId })
+
+    <div id="contentHeaderBox">
+        <h1>Group wise contact upload</h1>
+        <div class="btn-group pull-right" id="editOption">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                <i class="fa fa-cog"></i>
+            </button>
+            <ul class="dropdown-menu pull-right" style="" role="menu">
+                <li>
+                    <a href="@Url.Action("GroupView", "UploadGroup")"><i class="fa fa-file-text"></i> Contact Group</a>
+                    <a href="@Url.Action("EditContact", "UploadEdit")"><i class="fa fa-file-text"></i> Edit Contact</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <br />
+
+    <div class="col-md-12">
+        <div class="form-group">
+
+
+            <div class="row">
+                <div class="col-md-12">
+                    <p>Please upload xls/xlxs file with specific format</p>
+                    <p><strong>NB:</strong> Excel file must have fixed column name <strong>(NAME,EMAIL,MOBILE1,MOBILE2,ADDRESS)</strong></p>
+                    <a href="~/UploadFile/ContactFormat.xls" style="color: blue">Download sample file</a>
+                    <ul>
+                        <li>
+                            <strong>name</strong> required
+                        </li>
+                        <li>
+                            <strong>email</strong> or <strong>mobileno1</strong>(mobile number like 8801xxxxxxxxx -13 digit) required
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "Select Group: ", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.DropDownListFor(model => model.GROUPID, listOfGroupame, "-Select Group Name-", new { @class = "form-control", id = "ddlGroupnameID", autofocus = true })
+                </div>
+            </div>
+
+            <br />
+            <div class="row" id="UploadContent">
+                <div class="col-md-2">
+                    @Html.Label("name", "Upload Excel File: ", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    <input type="file" id="FileUpload" name="file" accept="application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+                    @if (ViewBag.UploadMessage != null)
+                    {
+                        <h4 style="color: #226699">@ViewBag.UploadMessage</h4>
+                    }
+                </div>
+                <div class="col-md-2">
+                    <input type="submit" class="btn btn-primary" value="Process" style="float: right;" id="load" data-loading-text="Uploading...." />
+                </div>
+            </div>
+
+
+
+            @if (TempData["ErrorUploadList"] != null)
+            {
+                List<UploadContactDTO> errorUploadList = new List<UploadContactDTO>();
+                errorUploadList = (List<UploadContactDTO>)TempData["ErrorUploadList"];
+
+                <br />
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="panel panel-danger">
+                            <div class="panel-heading">Error List- This list doesn't add in database!!!!! </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <tr>
+                                        <th>
+                                            Name
+                                        </th>
+                                        <th>
+                                            Email
+                                        </th>
+                                        <th>
+                                            Mobile No 1
+                                        </th>
+                                        <th>
+                                            Mobile No 2
+                                        </th>
+                                        <th>
+                                            Address
+                                        </th>
+                                    </tr>
+
+                                    @foreach (var item in errorUploadList)
+                                    {
+                                        <tr>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.NAME)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.EMAIL)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.MOBNO1)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.MOBNO2)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.ADDRESS)
+                                            </td>
+                                        </tr>
+                                    }
+
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @Html.TextBoxFor(model => model.INSLTUDE, new { id = "latlon", style = "display: none;" })
+            <input id="lat" type="hidden" />
+            <input id="lon" type="hidden" />
+        </div>
+    </div>
+
+
+    //Latitute & longitude
+    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+    <script language="javascript" type="text/javascript">
+        $(function () {
+            navigator.geolocation.getCurrentPosition(showPosition);
+            //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+            function showPosition(position) {
+                var coordinates = position.coords;
+                $("#lat").val(coordinates.latitude);
+                $("#lon").val(coordinates.longitude);
+
+                $("#latlon").val(
+                    $("#lat").val() + "," + $("#lon").val()
+                );
+            }
+        });
+    </script>
+
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+
+            var groupID = $('#ddlGroupnameID').val();
+            if (groupID == "") {
+                $('#UploadContent').hide();
+            } else {
+                $('#UploadContent').show();
+            }
+
+            $('#ddlGroupnameID').change(function () {
+                var groupID = $('#ddlGroupnameID').val();
+                if (groupID == "") {
+                    $('#UploadContent').hide();
+                } else {
+                    $('#UploadContent').show();
+                }
+            });
+
+
+            $('.btn').on('click', function () {
+                var $this = $(this);
+                $this.button('loading');
+                setTimeout(function () {
+                    $this.button('reset');
+                }, 8000);
+            });
+        });
+    </script>
+
+}
+
+
+

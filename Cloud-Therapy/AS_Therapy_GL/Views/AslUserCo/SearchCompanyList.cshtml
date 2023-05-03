@@ -1,0 +1,129 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.CompanyModel
+
+
+@{
+    ViewBag.Title = "SearchUserList";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+
+    if (LoggedUserTp == "AslSuperadmin" && LoggedUserStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+
+
+    //Company Name: [ ] , Company Name Field loaded in DropdownList
+    List<SelectListItem> aslCompanyName = new List<SelectListItem>();
+    var result = (from n in db.AslCompanyDbSet
+                  select n).ToList();
+
+    foreach (var n in result)
+    {
+        AslCompany aslCompany = db.AslCompanyDbSet.FirstOrDefault(e => e.COMPID == n.COMPID);
+        aslCompanyName.Add(new SelectListItem { Text = aslCompany.COMPNM, Value = aslCompany.COMPID.ToString() });
+    }
+
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(false)
+
+    @Html.HiddenFor(model => model.AslUsercoModel.COMPID, new { id = "txtCompID" })
+    @*@Html.TextBoxFor(model => model.AslUsercoModel.USERID, new { id = "txtUserId" })*@
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Search Company User List</h1>
+    </div>
+    <br />
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-4">
+                    @Html.Label("name", "Search Company Name: ")
+                </div>
+                <div class="col-md-8">
+                    @Html.DropDownListFor(model => model.AslCompanyModel.COMPID, aslCompanyName, "Select Company Name", htmlAttributes: new { id = "ddlDropUsernameID", @class = "form-control", autofocus = true })
+                </div>
+            </div>
+
+
+            <br />
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-4"></div>
+                <div class="col-md-5">
+                    @*<input id="buttonShowAllData" type="submit" class="btn btn-success" value="Get All User Information" />*@
+                    <button id="buttonShowAllData" class="btn btn-success">Get All User Information</button>
+                </div>
+            </div>
+        </div>
+
+
+        <div>
+            @if (TempData["UserCreationMessage"] != null)
+            {
+                <div class="panel-heading text-center">
+                    <h4 style="color: #226699">@TempData["UserCreationMessage"]</h4>
+                </div>
+            }
+        </div>
+
+
+        <div id="result-Table">
+            @Html.Partial("~/Views/AslUserCO/_CompanyInfo.cshtml")
+        </div>
+    </div>
+
+            //Auto complete
+            <script language="javascript" type="text/javascript">
+                $(document).ready(function () {
+
+
+                    $('#ddlDropUsernameID').change(function () {
+
+                        var changedDropDown = $('#ddlDropUsernameID option:selected').val();
+                        var companyId = document.getElementById('txtCompID');
+
+                        $.getJSON(
+                        "/AslUserCO/ComapnyNameChanged", { "ChangedDropDown": changedDropDown },
+
+                        function (myData) {
+                            companyId.value = myData;
+                            var id = companyId.value;
+                            //Load Partial view
+                            $('#result-Table').load('@Url.Action("CompanyInfo")', { companyID: id });
+                        });
+                    });
+
+
+                    //this is button.
+                    $('#buttonShowAllData').click(function (e) {
+                        var id = 0;
+                        e.preventDefault();
+                        $('#result-Table').load('@Url.Action("CompanyInfo", "AslUserCO")', { companyID: id });
+                    });
+                });
+            </script>
+
+}
+
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>

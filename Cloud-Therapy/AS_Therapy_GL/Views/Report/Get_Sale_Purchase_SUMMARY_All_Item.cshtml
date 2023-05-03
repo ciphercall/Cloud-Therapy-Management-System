@@ -1,0 +1,220 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using System.Data.SqlTypes
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+@{
+    ViewBag.Title = "Get_Sale_Purchase_SUMMARY_All_Item";
+    Layout = null;
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    var companyId = Convert.ToInt64(Model.pst_Trans.COMPID);
+
+    string companyName = "", address = "", contactNo = "";
+    var re = from m in db.AslCompanyDbSet where m.COMPID == companyId select new { m.COMPNM, m.ADDRESS, m.CONTACTNO };
+    foreach (var n in re)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    DateTime fdate = Convert.ToDateTime(Model.Report_FromDate);
+    string ddt = fdate.ToString("dd-MMM-yyyy");
+    var fromdate = ddt;
+
+    DateTime tDate = Convert.ToDateTime(Model.Report_ToDate);
+    string tdd = tDate.ToString("dd-MMM-yyyy");
+    var todate = tdd;
+
+
+    var Type = Convert.ToString(Model.TRANSTP);
+    string type = "";
+    if (Type == "SALE")
+    {
+        type = "Sale";
+    }
+    else if (Type == "IRTS")
+    {
+        type = "Sale Return";
+    }
+    else if (Type == "BUY")
+    {
+        type = "Buy";
+    }
+    else if (Type == "IRTB")
+    {
+        type = "Buy Return";
+    }
+    else if (Type == "ITRF")
+    {
+        type = "Transer";
+    }
+    else if (Type == "IREC")
+    {
+        type = "Receive";
+    }
+    else if (Type == "IISS")
+    {
+        type = "Issue";
+    }
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+}
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="10%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+
+                </tr>
+                <tr style="background-color: #00689b">
+                    <td colspan="12">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<br />  @contactno</p>
+                    </td>
+
+                    <td colspan="6" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>
+                <tr>
+                    @if (Type == "BUY" || Type == "IRTB")
+                    {
+                        <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Purchase Summary- All Item</td>
+                    }
+                    else if (Type == "SALE" || Type == "IRTS")
+                    {
+                        <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Sales Summary- All Item</td>
+                    }
+                    <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="8" style="padding: 4px;font-weight: bold"> Transaction Type : <span style="font-weight:bold" align="left">@type</span></td>
+                    <td colspan="5" style="font-weight:bold">From Date : <span style="font-weight: bold" align="left">@fromdate</span></td>
+                    <td colspan="5" style="font-weight: bold"> To Date : <span style="font-weight:bold" align="left">@todate</span></td>
+                </tr>
+
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="12" style="color: white; padding: 4px" align="center">Item Name</td>
+                    <td colspan="6" style="color: white; padding: 4px" align="center">Amount</td>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    Decimal total_AMOUNT = 0, total_DISCAMT = 0, total_GROSSAMT = 0;
+                }
+                @{
+                    System.Data.SqlClient.SqlConnection conn1 = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+                    string query1 = string.Format(
+                        "SELECT PST_TRANS.ITEMID, ITEMNM, SUM(AMOUNT) AMOUNT FROM PST_TRANS " +
+    "INNER JOIN PST_ITEM ON PST_ITEM.ITEMID = PST_TRANS.ITEMID AND PST_ITEM.COMPID = PST_TRANS.COMPID " +
+    "WHERE PST_TRANS.COMPID='{0}'  AND TRANSTP = '{1}' AND TRANSDT BETWEEN '{2}'  AND '{3}' " +
+    "GROUP BY PST_TRANS.ITEMID, ITEMNM",
+                        companyId, Type, fdate, todate);
+                    System.Data.SqlClient.SqlCommand cmd1 = new System.Data.SqlClient.SqlCommand(query1, conn1);
+                    conn1.Open();
+                    SqlDataAdapter da1 = new SqlDataAdapter(cmd1);
+                    DataTable ds1 = new DataTable();
+                    da1.Fill(ds1);
+
+                    string ITEMNM = "";
+                    Decimal AMOUNT = 0, DISCAMT = 0, GROSSAMT = 0;
+
+                    foreach (DataRow row in ds1.Rows)
+                    {
+                        ITEMNM = row["ITEMNM"].ToString();
+                        AMOUNT = Convert.ToDecimal(row["AMOUNT"]);
+
+                        <tr style="outline:thin solid">
+                            <td align="center" colspan="12">
+                                @ITEMNM
+                            </td>
+                            <td align="right" colspan="6">
+                                @AMOUNT
+                            </td>
+                        </tr>
+
+                        total_AMOUNT = total_AMOUNT + AMOUNT;
+
+                    }
+                    conn1.Close();
+                }
+                
+                <tr>
+                    <td>
+                        <br />
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right" colspan="12" style="font-weight:bold">
+                        Total:
+                    </td>
+                    <td align="right" colspan="6" style="font-weight:bold">
+                        @total_AMOUNT
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
+

@@ -1,0 +1,253 @@
+﻿@using AS_Therapy_GL.Models
+@model IEnumerable<AS_Therapy_GL.Models.AslUserco>
+
+@{
+    ViewBag.Title = "Index";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+
+    if (LoggedUserTp == "AslSuperadmin" && LoggedUserStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    List<AslUserco> aslUsercos = new List<AslUserco>();
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    aslUsercos = db.AslUsercoDbSet.Where(e => e.OPTP != "AslSuperadmin").ToList();
+    //Int64 companyID = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+    //if (companyID != 0 && companyID != 1 && companyID != 2)
+    //{
+    //    aslUsercos = db.AslUsercoDbSet.Where(e => e.COMPID == companyID).ToList();
+    //}
+    //else
+    //{
+    //    aslUsercos = db.AslUsercoDbSet.ToList();
+    //}
+
+
+}
+
+
+
+
+
+
+
+@if (Model == null & TempData["SearchCompanyList_PartialView"] != null)
+{
+    <div class="panel panel-primary">
+        <!-- Default panel contents -->
+        <div class="panel-heading">Companies User Information</div>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <tr>
+                    @*<th>
+                        COMP ID
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.USERID)
+                    </th>*@
+                    <th>
+                        @Html.DisplayNameFor(model => model.USERNM)
+                    </th>
+                    @*<th>
+                            @Html.DisplayNameFor(model => model.DEPTNM)
+                        </th>*@
+                    <th>
+                        @Html.DisplayNameFor(model => model.OPTP)
+                    </th>
+                    @*<th>
+                        @Html.DisplayNameFor(model => model.ADDRESS)
+                    </th>*@
+                    <th>
+                        @Html.DisplayNameFor(model => model.MOBNO)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.EMAILID)
+                    </th>
+                    @*<th>
+                        @Html.DisplayNameFor(model => model.LOGINID)
+                    </th>*@
+                    @*<th>
+                        @Html.DisplayNameFor(model => model.LOGINPW)
+                    </th>*@
+                    <th>
+                        @Html.DisplayNameFor(model => model.TIMEFR)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.TIMETO)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.STATUS)
+                    </th>
+                    @*<th></th>*@
+                </tr>
+
+                @foreach (var item in aslUsercos)
+                {
+                    <tr>
+                        @*<td>
+                            @Html.DisplayFor(modelItem => item.COMPID)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.USERID)
+                        </td>*@
+                        <td>
+                            @Html.DisplayFor(modelItem => item.USERNM)
+                        </td>
+                        @*<td>
+                                @Html.DisplayFor(modelItem => item.DEPTNM)
+                            </td>*@
+                        <td>
+                            @Html.DisplayFor(modelItem => item.OPTP)
+                        </td>
+                        @*<td>
+                            @Html.DisplayFor(modelItem => item.ADDRESS)
+                        </td>*@
+                        <td>
+                            @Html.DisplayFor(modelItem => item.MOBNO)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.EMAILID)
+                        </td>
+                        @*<td>
+                            @Html.DisplayFor(modelItem => item.LOGINID)
+                        </td>*@
+                        @*<td>
+                            @Html.DisplayFor(modelItem => item.LOGINPW)
+                        </td>*@
+                        <td>
+                            @Html.DisplayFor(modelItem => item.TIMEFR)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.TIMETO)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.STATUS)
+                        </td>
+                        @*<td>
+                                @Html.ActionLink("Edit", "Edit", new { id = item.AslUsercoId }) |
+                                @Html.ActionLink("Details", "Details", new { id = item.AslUsercoId }) |
+                                @Html.ActionLink("Delete", "Delete", new { id = item.AslUsercoId })
+                            </td>*@
+                    </tr>
+                }
+
+            </table>
+        </div>
+    </div>
+}
+
+else if (Model != null)
+{
+    <div class="panel panel-primary">
+        <div class="panel-heading">Companies User Information</div>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <tr>
+                    @*<th>
+                        COMP ID
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.USERID)
+                    </th>*@
+                    <th>
+                        @Html.DisplayNameFor(model => model.USERNM)
+                    </th>
+                    @*<th>
+                            @Html.DisplayNameFor(model => model.DEPTNM)
+                        </th>*@
+                    <th>
+                        @Html.DisplayNameFor(model => model.OPTP)
+                    </th>
+                    @*<th>
+                        @Html.DisplayNameFor(model => model.ADDRESS)
+                    </th>*@
+                    <th>
+                        @Html.DisplayNameFor(model => model.MOBNO)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.EMAILID)
+                    </th>
+                    @*<th>
+                        @Html.DisplayNameFor(model => model.LOGINID)
+                    </th>*@
+                    @*<th>
+                        @Html.DisplayNameFor(model => model.LOGINPW)
+                    </th>*@
+                    <th>
+                        @Html.DisplayNameFor(model => model.TIMEFR)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.TIMETO)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.STATUS)
+                    </th>
+                    @*<th></th>*@
+                </tr>
+
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        @*<td>
+                            @Html.DisplayFor(modelItem => item.COMPID)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.USERID)
+                        </td>*@
+                        <td>
+                            @Html.DisplayFor(modelItem => item.USERNM)
+                        </td>
+                        @*<td>
+                                @Html.DisplayFor(modelItem => item.DEPTNM)
+                            </td>*@
+                        <td>
+                            @Html.DisplayFor(modelItem => item.OPTP)
+                        </td>
+                        @*<td>
+                            @Html.DisplayFor(modelItem => item.ADDRESS)
+                        </td>*@
+                        <td>
+                            @Html.DisplayFor(modelItem => item.MOBNO)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.EMAILID)
+                        </td>
+                        @*<td>
+                            @Html.DisplayFor(modelItem => item.LOGINID)
+                        </td>*@
+                        @*<td>
+                            @Html.DisplayFor(modelItem => item.LOGINPW)
+                        </td>*@
+                        <td>
+                            @Html.DisplayFor(modelItem => item.TIMEFR)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.TIMETO)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.STATUS)
+                        </td>
+                        @*<td>
+                                @Html.ActionLink("Edit", "Edit", new { id = item.AslUsercoId }) |
+                                @Html.ActionLink("Details", "Details", new { id = item.AslUsercoId }) |
+                                @Html.ActionLink("Delete", "Delete", new { id = item.AslUsercoId })
+                            </td>*@
+                    </tr>
+                }
+
+            </table>
+        </div>
+    </div>
+}

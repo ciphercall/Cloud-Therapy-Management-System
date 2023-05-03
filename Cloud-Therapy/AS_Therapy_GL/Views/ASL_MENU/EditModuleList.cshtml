@@ -1,0 +1,137 @@
+﻿@model AS_Therapy_GL.Models.ASL_MENUMST
+
+@{
+    ViewBag.Title = "EditModuleList";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+
+    if (LoggedUserTp == "AslSuperadmin" && LoggedUserStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.MODULEID)
+    
+   <div id="contentHeaderBox">
+    <h1>Update Module Information</h1>
+</div>
+<br />
+<div class="col-md-12">
+    <div class="form-group">
+
+        <div class="row">
+            <div class="col-md-3">
+                @Html.LabelFor(model => model.MODULENM, htmlAttributes: new { @class = "control-label" })
+            </div>
+            <div class="col-md-8">
+                @Html.TextBoxFor(model => model.MODULENM, htmlAttributes: new { @class = "form-control", autofocus = true })
+                @Html.ValidationMessageFor(model => model.MODULENM, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+
+
+        @Html.HiddenFor(model => model.USERPC)
+        @Html.HiddenFor(model => model.INSUSERID)
+        @Html.HiddenFor(model => model.INSTIME)
+        @Html.HiddenFor(model => model.INSIPNO)
+
+        <br />
+        <br />
+        <div class="row">
+            <div class="col-md-3"></div>
+            <div class="col-md-8">
+                <input type="submit" class="btn btn-info" value="Update" />
+            </div>
+
+        </div>
+
+        @*<br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.ActionLink("Back to List", "Index")
+                </div>
+            </div>*@
+
+    </div>
+    </div> 
+    
+    
+
+    @*<div class="container">
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+                <div class="panel panel-info" style="padding: 0px; margin-bottom: 0px;">
+                    <div class="panel-heading text-center">
+                        <h4>Update Module Information</h4>
+                    </div>
+                </div>
+
+
+                <div class="jumbotron">
+
+                    <div class="form-group">
+
+                        <div class="row">
+                            <div class="col-md-3">
+                                @Html.LabelFor(model => model.MODULENM, htmlAttributes: new { @class = "control-label" })
+                            </div>
+                            <div class="col-md-8">
+                                @Html.TextBoxFor(model => model.MODULENM, htmlAttributes: new { @class = "form-control" })
+                                @Html.ValidationMessageFor(model => model.MODULENM, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+
+
+                        @Html.HiddenFor(model => model.USERPC)
+                        @Html.HiddenFor(model => model.INSUSERID)
+                        @Html.HiddenFor(model => model.INSTIME)
+                        @Html.HiddenFor(model => model.INSIPNO)
+
+                        <br />
+                        <br />
+                        <div class="row">
+                            <div class="col-md-3"></div>
+                            <div class="col-md-8">
+                                <input type="submit" class="btn btn-info" value="Update" />
+                            </div>
+
+                        </div>
+
+                      
+
+                    </div>
+                </div>
+
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+
+    </div>*@
+
+}
+
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+
+
+

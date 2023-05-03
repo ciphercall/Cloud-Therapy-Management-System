@@ -1,0 +1,146 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.AslUserco
+
+
+@{
+    ViewBag.Title = "SearchUserList";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+    
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "AslSuperadmin") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(false)
+
+    @Html.HiddenFor(model => model.COMPID, new { id = "txtCompID" })
+    @Html.HiddenFor(model => model.USERID, new { id = "txtUserId" })
+    
+    
+    
+    
+     <div id="contentHeaderBox">
+        <h1>Search User Information</h1>
+    </div>
+    <br />
+  
+    <div class="col-md-12">
+       <div class="panel panel-primary">
+            <div class="panel-heading">User Information</div>
+            <div id="result-data">
+                @Html.Partial("~/Views/AslUserCO/_UserInfo.cshtml")
+            </div>
+        </div>
+       
+    </div>
+   
+    
+    
+
+    //Auto complete
+    <script language="javascript" type="text/javascript">
+
+        $(document).ready(function () {
+            $('#txtUsernameID').autocomplete(
+            {
+                source: '@Url.Action("TagSearch", "AslUserCO")',
+                change: txtOneChanged,
+
+            });
+        });
+
+        function txtOneChanged() {
+
+            var changedText = $("#txtUsernameID").val();
+            var txtBox = document.getElementById('txtUserId');
+            var companyId = document.getElementById('txtCompID');
+            $.getJSON(
+            "/AslUserCO/UserNameChanged", { "ChangedText": changedText },
+
+            function (myData) {
+                txtBox.value = myData.ITEMID;
+                companyId.value = myData.COMPID;
+                var id = txtBox.value;
+                var id2 = companyId.value;
+                //Load Partial view
+                $('#result-data').load('@Url.Action("UserInfo")', { userID: id, companyID: id2 });
+                document.getElementById('buttonShowAllData').focus();
+            });
+
+        }
+
+    </script>
+
+
+    <style type="text/css">
+        .ui-autocomplete {
+            position: absolute;
+            cursor: default;
+            background: #f0ffff;
+        }
+
+        /* workarounds */
+        html .ui-autocomplete {
+            width: 1px;
+        }
+        /* without this, the menu expands to 100% in IE6 */
+        .ui-menu {
+            list-style: none;
+            padding: 2px;
+            margin: 0;
+            display: block;
+            float: left;
+        }
+
+            .ui-menu .ui-menu {
+                margin-top: -3px;
+            }
+
+            .ui-menu .ui-menu-item {
+                margin: 0;
+                padding: 0;
+                zoom: 1;
+                float: left;
+                clear: left;
+                width: 100%;
+            }
+
+                .ui-menu .ui-menu-item a {
+                    text-decoration: none;
+                    display: block;
+                    padding: .2em .4em;
+                    line-height: 1.5;
+                    zoom: 1;
+                }
+
+                    .ui-menu .ui-menu-item a.ui-state-hover,
+                    .ui-menu .ui-menu-item a.ui-state-active {
+                        font-weight: normal;
+                        margin: -1px;
+                    }
+    </style>
+
+}
+
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>

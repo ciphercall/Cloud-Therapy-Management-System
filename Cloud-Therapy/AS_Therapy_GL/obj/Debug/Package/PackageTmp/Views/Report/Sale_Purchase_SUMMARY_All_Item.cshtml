@@ -1,0 +1,194 @@
+﻿@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+@{
+    ViewBag.Title = "Sale_Purchase_SUMMARY_All_Item";
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    Int64 companyID = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"].ToString());
+    Int64 loggedUserID = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+
+
+    var permission_Check = from m in db.AslRoleDbSet
+                           where m.COMPID == companyID && m.USERID == loggedUserID
+                               && m.CONTROLLERNAME == "Report" && m.ACTIONNAME == "Sale_Purchase_SUMMARY_All_Item"
+                           select m;
+    var Status = "";
+    foreach (var check in permission_Check)
+    {
+        Status = check.STATUS;
+    }
+
+    if (Status == "A")
+    {
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+    
+    
+    
+    
+    
+    
+    
+
+    List<SelectListItem> listTransType = new List<SelectListItem>();
+    listTransType.Add(new SelectListItem { Text = "Sale", Value = "SALE" });
+    //listTransType.Add(new SelectListItem { Text = "Sale Return", Value = "IRTS" });
+    listTransType.Add(new SelectListItem { Text = "Buy", Value = "BUY" });
+    listTransType.Add(new SelectListItem { Text = "Buy Return", Value = "IRTB" });
+    //listTransType.Add(new SelectListItem { Text = "Transer", Value = "ITRF" });
+    //listTransType.Add(new SelectListItem { Text = "Receive", Value = "IREC" });
+    //listTransType.Add(new SelectListItem { Text = "Issue", Value = "IISS" });
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+}
+
+
+
+<link href="~/Content/bootstrap-datepicker-css/datepicker.css" rel="stylesheet" />
+<link href="~/Content/bootstrap-datepicker-css/datepicker3.css" rel="stylesheet" />
+<script src="~/Scripts/bootstrap-datepicker.js"></script>
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.pst_Trans.COMPID, new { @Value = companyID })
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left: 16px;">Sale/Purchase Summary-All Item</h1>
+    </div>
+    <br />
+
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "Transaction Type:    ")
+                </div>
+                <div class="col-md-8">
+                    @Html.DropDownListFor(model => model.TRANSTP, listTransType, "Select Transaction Type", htmlAttributes: new { @class = "form-control",autofocus=true })
+                    @Html.ValidationMessageFor(model => model.TRANSTP, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "From Date:    ")
+                </div>
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.Report_FromDate, htmlAttributes: new { id = "fromDate", @class = "form-control", @Value = currentDateTime.ToString("dd-MMM-yyyy") })
+                    @Html.ValidationMessageFor(model => model.Report_FromDate, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "To Date:    ")
+                </div>
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.Report_ToDate, htmlAttributes: new { id = "toDate", @class = "form-control", @Value = currentDateTime.ToString("dd-MMM-yyyy") })
+                    @Html.ValidationMessageFor(model => model.Report_ToDate, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-2"></div>
+                <div class="col-md-8">
+                    <input id="submitId" type="submit" class="btn btn-success" value="Print" formtarget="_blank" />
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#fromDate').datepicker({
+                format: "dd-M-yyyy",
+                autoclose: true,
+                todayHighlight: true,
+                showOnFocus: true,
+            }).on('show', function (e) {
+                if (e.date) {
+                    $(this).data('stickyDate', e.date);
+                }
+                else {
+                    $(this).data('stickyDate', null);
+                }
+            }).on('hide', function (e) {
+                var stickyDate = $(this).data('stickyDate');
+
+                if (!e.date && stickyDate) {
+                    $(this).datepicker('setDate', stickyDate);
+                    $(this).data('stickyDate', null);
+                }
+                document.getElementById("toDate").focus();
+            });
+
+
+            $('#toDate').datepicker({
+                format: "dd-M-yyyy",
+                autoclose: true,
+                todayHighlight: true,
+                showOnFocus: true,
+            }).on('show', function (e) {
+                if (e.date) {
+                    $(this).data('stickyDate', e.date);
+                }
+                else {
+                    $(this).data('stickyDate', null);
+                }
+            }).on('hide', function (e) {
+                var stickyDate = $(this).data('stickyDate');
+
+                if (!e.date && stickyDate) {
+                    $(this).datepicker('setDate', stickyDate);
+                    $(this).data('stickyDate', null);
+                }
+                document.getElementById("submitId").focus();
+            });
+        });
+
+
+    </script>
+
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+
+
+

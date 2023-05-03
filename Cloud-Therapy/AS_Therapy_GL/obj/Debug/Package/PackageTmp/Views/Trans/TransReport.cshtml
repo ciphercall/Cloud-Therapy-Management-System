@@ -1,0 +1,514 @@
+﻿@using AS_Therapy_GL.DataAccess
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+@{
+    Layout = null;
+
+    var LoggedCompId = Model.AGlMaster.COMPID;
+
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+
+    string companyName = "", address = "", contactNo = "";
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    var SelectCompanyName = from n in db.AslCompanyDbSet
+
+                            where n.COMPID == compid
+                            select new { n.COMPNM, n.ADDRESS, n.CONTACTNO };
+
+    foreach (var n in SelectCompanyName)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    var accountname = Model.AGL_acchart.ACCOUNTNM;
+    var fromdate = Model.FromDate;
+    var todate = Model.ToDate;
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+</head>
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="10%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+
+                </tr>
+
+                <tr style="background-color: #00689b">
+                    <td colspan="12">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<span>  @contactno</span></p>
+                    </td>
+
+                    <td colspan="6" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>
+                <tr>
+                    <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Transaction Listing</td>
+                    <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="outline: thin solid">
+
+                    @{
+                        string d = Convert.ToString(fromdate);
+                        DateTime fdate = DateTime.Parse(d);
+                        string ffdt = fdate.ToString("dd-MMM-yyyy");
+
+
+                        string d2 = Convert.ToString(todate);
+                        DateTime fdate2 = DateTime.Parse(d2);
+                        string ffdt2 = fdate2.ToString("dd-MMM-yyyy");
+
+                    }
+                    <td colspan="12" style="font-weight: bold;padding:4px">
+                        From : <span style="font-weight:bold">@ffdt</span> <span>To :</span>
+                        <span style="font-weight:bold">@ffdt2</span>
+                    </td>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var mrec_data = (from n in db.GlStransDbSet where n.COMPID == compid && n.TRANSTP == "MREC" && n.TRANSDT >= fromdate && n.TRANSDT <= todate select n).OrderBy(x => x.TRANSDT).ToList();
+                    var mpay_data = (from n in db.GlStransDbSet where n.COMPID == compid && n.TRANSTP == "MPAY" && n.TRANSDT >= fromdate && n.TRANSDT <= todate select n).OrderBy(x => x.TRANSDT).ToList();
+                    var jour_data = (from n in db.GlStransDbSet where n.COMPID == compid && n.TRANSTP == "JOUR" && n.TRANSDT >= fromdate && n.TRANSDT <= todate select n).OrderBy(x => x.TRANSDT).ToList();
+                    var cont_data = (from n in db.GlStransDbSet where n.COMPID == compid && n.TRANSTP == "CONT" && n.TRANSDT >= fromdate && n.TRANSDT <= todate select n).OrderBy(x => x.TRANSDT).ToList();
+
+                    var rec = mrec_data.Count;
+                    var mpay = mpay_data.Count;
+                    var jj = jour_data.Count;
+                    var cc = cont_data.Count;
+                    decimal totalrec = 0, totalpay = 0, totaljour = 0, totalcont = 0;
+                }
+
+                <tr>
+                    <td><br /></td>
+                </tr>
+                <tr style="outline:thin initial">
+                    <td colspan="18" align="left" style="padding-left:4px">
+                        CREDIT VOUCHER
+                    </td>
+                </tr>
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Date</td>
+                    <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Voucher No.</td>
+                    <td colspan="5" style="color: white; padding: 4px; font-size: small" align="center">Debit Head</td>
+                    <td colspan="7" style="color: white; padding: 4px; font-size: small" align="center">Credit Head</td>
+                    <td colspan="2" style="color: white; padding: 4px; font-size:small" align="center">Amount</td>
+                </tr>
+                @foreach (var item in mrec_data)
+                {
+                    string xx = Convert.ToString(item.TRANSDT);
+                    DateTime date = DateTime.Parse(xx);
+                    string TransDate = date.ToString("dd-MMM-yy");
+
+
+                    var dddd = from m in db.GlAcchartDbSet where m.COMPID == compid && m.ACCOUNTCD == item.DEBITCD select new { m.ACCOUNTNM };
+                    string debitaccount = "";
+                    foreach (var y in dddd)
+                    {
+                        debitaccount = y.ACCOUNTNM;
+
+                    }
+
+
+                    var credithead = from n in db.GlAcchartDbSet where n.COMPID == compid && n.ACCOUNTCD == item.CREDITCD select new { n.ACCOUNTNM };
+                    string creditaccount = "";
+                    foreach (var x in credithead)
+                    {
+                        creditaccount = x.ACCOUNTNM;
+                    }
+
+                    <tr style="outline:thin solid">
+                        <td colspan="2" align="center" style="font-size: small">
+                            @TransDate
+                        </td>
+                        <td colspan="2" align="center" style="font-size: small">
+                            @Html.DisplayFor(modelItem => item.TRANSNO)
+                        </td>
+                        <td colspan="5" align="left" style="font-size: small">
+                            @debitaccount
+                        </td>
+                        <td colspan="7" align="left" style="font-size: small">
+                            @creditaccount
+                        </td>
+                        @{
+                    Int64 st5 = 0;
+                    decimal rr = Convert.ToDecimal(item.AMOUNT);
+                    string Result = "";
+                    if (rr < 0)
+                    {
+                        rr = rr * (-1);
+                        string convertamount5 = Convert.ToString(rr);
+                        Result = CommainAmount.AmountwithComma(convertamount5);
+                    }
+                    else
+                    {
+                        string convertamount5 = Convert.ToString(rr);
+                        Result = CommainAmount.AmountwithComma(convertamount5);
+                    }
+
+                        }
+                        @if (st5 == 1)
+                        {
+                            <td colspan="2" align="right" style="font-size: small">
+                                -@Result
+                            </td>
+                        }
+                        else
+                        {
+                            <td colspan="2" align="right" style="font-size: small">
+                                @Result
+                            </td>
+                        }
+                    </tr>
+                        totalrec = Convert.ToDecimal(totalrec + item.AMOUNT);
+                }
+                @{
+                    string convertamount = Convert.ToString(totalrec);
+                    string totalRec = CommainAmount.AmountwithComma(convertamount);
+                }
+                <tr style="outline:thin solid">
+                    <td colspan="10" align="left" style="font-weight:bold;padding-left: 4px">Total Number Of Vouchar : @rec </td>
+                    <td colspan="4" align="right" style="font-weight:bold">Total :</td>
+                    <td colspan="4" align="right" style="font-weight:bold">@totalRec</td>
+                </tr>
+
+                <tr>
+                    <td><br /></td>
+                </tr>
+                <tr style="outline:thin initial">
+                    <td colspan="18" align="left" style="padding-left:4px">
+                        DEBIT VOUCHER
+                    </td>
+                </tr>
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Date</td>
+                    <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Voucher No.</td>
+                    <td colspan="5" style="color: white; padding: 4px; font-size: small" align="center">Debit Head</td>
+                    <td colspan="7" style="color: white; padding: 4px; font-size: small" align="center">Credit Head</td>
+                    <td colspan="2" style="color: white; padding: 4px; font-size:small" align="center">Amount</td>
+                </tr>
+                @foreach (var item in mpay_data)
+                {
+                    string xx = Convert.ToString(item.TRANSDT);
+                    DateTime date = DateTime.Parse(xx);
+                    string TransDate = date.ToString("dd-MMM-yy");
+
+
+                    var dddd = from m in db.GlAcchartDbSet where m.COMPID == compid && m.ACCOUNTCD == item.DEBITCD select new { m.ACCOUNTNM };
+                    string debitaccount = "";
+                    foreach (var y in dddd)
+                    {
+                        debitaccount = y.ACCOUNTNM;
+
+                    }
+
+
+                    var credithead = from n in db.GlAcchartDbSet where n.COMPID == compid && n.ACCOUNTCD == item.CREDITCD select new { n.ACCOUNTNM };
+                    string creditaccount = "";
+                    foreach (var x in credithead)
+                    {
+                        creditaccount = x.ACCOUNTNM;
+                    }
+
+                    <tr style="outline:thin solid">
+                        <td colspan="2" align="center" style="font-size: small">
+                            @TransDate
+                        </td>
+                        <td colspan="2" align="center" style="font-size: small">
+                            @Html.DisplayFor(modelItem => item.TRANSNO)
+                        </td>
+                        <td colspan="5" align="left" style="font-size: small">
+                            @debitaccount
+                        </td>
+                        <td colspan="7" align="left" style="font-size: small">
+                            @creditaccount
+                        </td>
+
+                        @{
+                    Int64 st5 = 0;
+                    decimal rr = Convert.ToDecimal(item.AMOUNT);
+                    string Result = "";
+                    if (rr < 0)
+                    {
+                        rr = rr * (-1);
+                        string convertamount5 = Convert.ToString(rr);
+                        Result = CommainAmount.AmountwithComma(convertamount5);
+                        st5 = 1;
+                    }
+                    else
+                    {
+                        string convertamount5 = Convert.ToString(rr);
+                        Result = CommainAmount.AmountwithComma(convertamount5);
+                        st5 = 0;
+                    }
+
+                        }
+                        @if (st5 == 1)
+                        {
+                            <td colspan="2" align="right" style="font-size: small">
+                                -@Result
+                            </td>
+                        }
+                        else
+                        {
+                            <td colspan="2" align="right" style="font-size: small">
+                                @Result
+                            </td>
+                        }
+
+                    </tr>
+                        totalpay = Convert.ToDecimal(totalpay + item.AMOUNT);
+                }
+                @{
+                    string convertamount1 = Convert.ToString(totalpay);
+
+                    string totalPay = CommainAmount.AmountwithComma(convertamount1);
+                }
+                <tr style="outline:thin solid">
+                    <td colspan="10" align="left" style="font-weight:bold;padding-left: 4px">Total Number Of Vouchar : @mpay </td>
+                    <td colspan="4" align="right" style="font-weight:bold">Total :</td>
+                    <td colspan="4" align="right" style="font-weight:bold">@totalPay</td>
+                </tr>
+
+                <tr>
+                    <td><br /></td>
+                </tr>
+                <tr style="outline:thin initial">
+                    <td colspan="18" align="left" style="padding-left:4px">
+                        JOURNAL VOUCHER
+                    </td>
+                </tr>
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Date</td>
+                    <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Voucher No</td>
+                    <td colspan="5" style="color: white; padding: 4px; font-size: small" align="center">Debit Head</td>
+                    <td colspan="7" style="color: white; padding: 4px; font-size: small" align="center">Credit Head</td>
+                    <td colspan="2" style="color: white; padding: 4px; font-size:small" align="center">Amount</td>
+                </tr>
+                @foreach (var item in jour_data)
+                {
+                    string xx = Convert.ToString(item.TRANSDT);
+                    DateTime date = DateTime.Parse(xx);
+                    string TransDate = date.ToString("dd-MMM-yy");
+
+
+
+                    var dddd = from m in db.GlAcchartDbSet where m.COMPID == compid && m.ACCOUNTCD == item.DEBITCD select new { m.ACCOUNTNM };
+                    string debitaccount = "";
+                    foreach (var y in dddd)
+                    {
+                        debitaccount = y.ACCOUNTNM;
+
+                    }
+
+
+                    var credithead = from n in db.GlAcchartDbSet where n.COMPID == compid && n.ACCOUNTCD == item.CREDITCD select new { n.ACCOUNTNM };
+                    string creditaccount = "";
+                    foreach (var x in credithead)
+                    {
+                        creditaccount = x.ACCOUNTNM;
+                    }
+
+
+                    <tr style="outline:thin solid">
+                        <td colspan="2" align="center" style="font-size: small">
+                            @TransDate
+                        </td>
+                        <td colspan="2" align="center" style="font-size: small">
+                            @Html.DisplayFor(modelItem => item.TRANSNO)
+                        </td>
+                        <td colspan="5" align="left" style="font-size: small">
+                            @debitaccount
+                        </td>
+                        <td colspan="7" align="left" style="font-size: small">
+                            @creditaccount
+                        </td>
+                        @{
+                    Int64 st5 = 0;
+                    decimal rr = Convert.ToDecimal(item.AMOUNT);
+                    string Result = "";
+                    if (rr < 0)
+                    {
+                        rr = rr * (-1);
+                        string convertamount5 = Convert.ToString(rr);
+                        Result = CommainAmount.AmountwithComma(convertamount5);
+                    }
+                    else
+                    {
+                        string convertamount5 = Convert.ToString(rr);
+                        Result = CommainAmount.AmountwithComma(convertamount5);
+                    }
+
+                        }
+                        @if (st5 == 1)
+                        {
+                            <td colspan="2" align="right" style="font-size: small">
+                                -@Result
+                            </td>
+                        }
+                        else
+                        {
+                            <td colspan="2" align="right" style="font-size: small">
+                                @Result
+                            </td>
+                        }
+
+                    </tr>
+                        totaljour = Convert.ToDecimal(totaljour + item.AMOUNT);
+                }
+                @{
+                    string convertamount2 = Convert.ToString(totaljour);
+
+                    string totalJour = CommainAmount.AmountwithComma(convertamount2);
+                }
+                <tr style="outline:thin solid">
+                    <td colspan="10" align="left" style="font-weight:bold;padding-left: 4px">Total Number Of Vouchar : @jj </td>
+                    <td colspan="4" align="right" style="font-weight:bold">Total :</td>
+                    <td colspan="4" align="right" style="font-weight:bold">@totalJour</td>
+                </tr>
+
+                <tr>
+                    <td><br /></td>
+                </tr>
+                <tr style="outline:thin initial">
+                    <td colspan="18" align="left" style="padding-left:4px">
+                        CONTRA VOUCHER
+                    </td>
+                </tr>
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="2" style="color: white; padding: 4px ;font-size: small" align="center">Date</td>
+                    <td colspan="2" style="color: white; padding: 4px ;font-size: small" align="center">Voucher No</td>
+                    <td colspan="5" style="color: white; padding: 4px;font-size: small" align="center">Debit Head</td>
+                    <td colspan="7" style="color: white; padding: 4px;font-size: small" align="center">Credit Head</td>
+                    <td colspan="2" style="color: white; padding: 4px;font-size: small" align="center">Amount</td>
+
+                </tr>
+                @foreach (var item in cont_data)
+                {
+                    string xx = Convert.ToString(item.TRANSDT);
+                    DateTime date = DateTime.Parse(xx);
+                    string TransDate = date.ToString("dd-MMM-yy");
+
+
+
+                    var dddd = from m in db.GlAcchartDbSet where m.COMPID == compid && m.ACCOUNTCD == item.DEBITCD select new { m.ACCOUNTNM };
+                    string debitaccount = "";
+                    foreach (var y in dddd)
+                    {
+                        debitaccount = y.ACCOUNTNM;
+
+                    }
+
+
+                    var credithead = from n in db.GlAcchartDbSet where n.COMPID == compid && n.ACCOUNTCD == item.CREDITCD select new { n.ACCOUNTNM };
+                    string creditaccount = "";
+                    foreach (var x in credithead)
+                    {
+                        creditaccount = x.ACCOUNTNM;
+                    }
+
+
+                    <tr style="outline:thin solid">
+                        <td colspan="2" align="center" style="font-size: small">
+                            @TransDate
+
+                        </td>
+                        <td colspan="2" align="center" style="font-size: small">
+                            @Html.DisplayFor(modelItem => item.TRANSNO)
+                        </td>
+                        <td colspan="5" align="left" style="font-size: small">
+                            @*@Html.DisplayFor(modelItem => item.DEBITCD)*@
+                            @debitaccount
+                        </td>
+                        <td colspan="7" align="left" style="font-size: small">
+                            @*@Html.DisplayFor(modelItem => item.CREDITCD)*@
+                            @creditaccount
+                        </td>
+                        @{
+                    Int64 st5 = 0;
+                    decimal rr = Convert.ToDecimal(item.AMOUNT);
+                    string Result = "";
+                    if (rr < 0)
+                    {
+                        rr = rr * (-1);
+                        string convertamount5 = Convert.ToString(rr);
+                        Result = CommainAmount.AmountwithComma(convertamount5);
+                    }
+                    else
+                    {
+                        string convertamount5 = Convert.ToString(rr);
+                        Result = CommainAmount.AmountwithComma(convertamount5);
+                    }
+
+                        }
+                        @if (st5 == 1)
+                        {
+                            <td colspan="2" align="right" style="font-size: small">
+                                -@Result
+                            </td>
+                        }
+                        else
+                        {
+                            <td colspan="2" align="right" style="font-size: small">
+                                @Result
+                            </td>
+                        }
+
+
+                    </tr>
+                        totalcont = Convert.ToDecimal(totalcont + item.AMOUNT);
+                }
+                @{
+                    string convertamount3 = Convert.ToString(totalcont);
+                    string totalCont = CommainAmount.AmountwithComma(convertamount3);
+                }
+                <tr style="outline:thin solid">
+                    <td colspan="10" align="left" style="font-weight:bold;padding-left: 4px">Total Number Of Vouchar : @cc </td>
+                    <td colspan="4" align="right" style="font-weight:bold">Total :</td>
+                    <td colspan="4" align="right" style="font-weight:bold">@totalCont</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
+

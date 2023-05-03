@@ -1,0 +1,233 @@
+﻿@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+@{
+    ViewBag.Title = "menu List";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    //var LoggedCompId = HttpContext.Current.Session["loggedCompID"].ToString();
+
+    if (LoggedUserTp == "AslSuperadmin" && LoggedUserStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    List<SelectListItem> listItems = new List<SelectListItem>();
+    listItems.Add(new SelectListItem
+    {
+        Text = "Form",
+        Value = "F"
+    });
+    listItems.Add(new SelectListItem
+    {
+        Text = "Report",
+        Value = "R"
+    });
+
+
+}
+
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.aslMenumst.MODULEID, new { id = "txtModId" })
+
+
+    <div id="contentHeaderBox">
+        <h1>Create Menu Information</h1>
+    </div>
+    <br />
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Module Name")
+                </div>
+                <div class="col-md-8">
+                    @*<input class="form-control" id="txtModNm" />*@
+                    @Html.TextBoxFor(model => model.aslMenumst.MODULENM, new { @class = "form-control", id = "txtModNm", autofocus = true })
+                </div>
+            </div>
+            @if (ViewBag.ModuleNameField != null)
+            {
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-8">
+                        <h6 style="color: #C03523">@ViewBag.ModuleNameField</h6>
+                    </div>
+                </div>
+            }
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.aslMenu.MENUTP, htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    @Html.DropDownListFor(model => model.aslMenu.MENUTP, listItems, "--Select Type--", htmlAttributes: new { @class = "form-control", id = "ddlMtype" })
+                    @Html.ValidationMessageFor(model => model.aslMenu.MENUTP, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            @if (ViewBag.MenuTypeField != null)
+            {
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-8">
+                        <h6 style="color: #C03523">@ViewBag.MenuTypeField</h6>
+                    </div>
+                </div>
+            }
+            @if (ViewBag.NullAllField != null)
+            {
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-8">
+                        <h6 style="color: #C03523">@ViewBag.NullAllField</h6>
+                    </div>
+                </div>
+            }
+
+            <br />
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-8">
+                    <input type="submit" class="btn btn-info" value="Apply Filter" />
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    <div class="col-md-12">
+
+        @if (TempData["message"] != null)
+        {
+            <div class="text-center">
+                <h4>@TempData["message"] </h4>
+            </div>
+        }
+
+        <div>
+            <table id="menugrid"></table>
+            <div id="pager"></div>
+        </div>
+
+    </div>
+
+
+
+
+
+
+
+    <script language="javascript" type="text/javascript">
+
+        $(document).ready(function () {
+            $('#txtModNm').autocomplete(
+            {
+                source: '@Url.Action("TagSearch", "ASL_MENU")',
+                change: txtOneChanged,
+                select: function (event, ui) {
+                    $("#txtModNm").val(ui.item.label);
+                    txtOneChanged();
+                },
+            });
+        });
+
+        function txtOneChanged() {
+
+            var changedText = $("#txtModNm").val();
+            var txtBox = document.getElementById('txtModId');
+
+            $.getJSON(
+            "/ASL_MENU/ItemNameChanged", { "ChangedText": changedText },
+
+
+            function (myData) {
+                txtBox.value = myData;
+                document.getElementById("txtModNm").focus();
+
+            });
+        }
+
+    </script>
+
+    <style type="text/css">
+        .ui-autocomplete {
+            position: absolute;
+            cursor: default;
+            background: #f0ffff;
+            max-height: 200px;
+            overflow-y: auto;
+            /* prevent horizontal scrollbar */
+            overflow-x: hidden;
+            /* add padding to account for vertical scrollbar */
+            padding-right: 20px;
+        }
+
+
+        /*html .ui-autocomplete {
+            width: 1px;
+        }
+
+        .ui-menu {
+            list-style: none;
+            padding: 2px;
+            margin: 0;
+            display: block;
+            float: left;
+        }
+
+            .ui-menu .ui-menu {
+                margin-top: -3px;
+            }
+
+            .ui-menu .ui-menu-item {
+                margin: 0;
+                padding: 0;
+                zoom: 1;
+                float: left;
+                clear: left;
+                width: 100%;
+            }
+
+                .ui-menu .ui-menu-item a {
+                    text-decoration: none;
+                    display: block;
+                    padding: .2em .4em;
+                    line-height: 1.5;
+                    zoom: 1;
+                }
+
+                    .ui-menu .ui-menu-item a.ui-state-hover,
+                    .ui-menu .ui-menu-item a.ui-state-active {
+                        font-weight: normal;
+                        margin: -1px;
+                    }*/
+    </style>
+
+}
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+<link href="~/Content/jquery.jqGrid/ui.jqgrid.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+<script src="~/Scripts/i18n/grid.locale-en.js"></script>
+<script src="~/Scripts/jquery.jqGrid.min.js"></script>
+@* Grid view Script ,that means Grid View Table *@
+<script src="~/Scripts/_menuAsl.js"></script>
+

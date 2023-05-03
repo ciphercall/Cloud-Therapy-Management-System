@@ -1,0 +1,290 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PST_REFER
+
+
+@{
+    ViewBag.Title = "Create";
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Int64 LoggedCompId = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.COMPID, new { @Value = LoggedCompId })
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Create Refer Information</h1>
+        @if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A")
+        {
+            var createStatus = "";
+            var updateStatus = "";
+            var deleteStatus = "";
+            var status = "";
+            var loggedUserID = HttpContext.Current.Session["loggedUserID"].ToString();
+            System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+
+            string query1 = string.Format("SELECT STATUS, INSERTR, UPDATER, DELETER FROM ASL_ROLE WHERE  CONTROLLERNAME='PST_Refer' AND COMPID='{0}' AND USERID = '{1}'", LoggedCompId, loggedUserID);
+
+            System.Data.SqlClient.SqlCommand cmd1 = new System.Data.SqlClient.SqlCommand(query1, conn);
+            conn.Open();
+
+            SqlDataAdapter da1 = new SqlDataAdapter(cmd1);
+            DataTable ds1 = new DataTable();
+            da1.Fill(ds1);
+
+            foreach (DataRow row in ds1.Rows)
+            {
+                status = row["STATUS"].ToString();
+                createStatus = row["INSERTR"].ToString();
+                updateStatus = row["UPDATER"].ToString();
+                deleteStatus = row["DELETER"].ToString();
+            }
+            conn.Close();
+
+
+            if (createStatus == "A")
+            {
+
+            }
+            else if (updateStatus == "A")
+            {
+                Response.Redirect("~/PST_Refer/Update");
+            }
+            else if (deleteStatus == "A")
+            {
+                Response.Redirect("~/PST_Refer/Delete");
+            }
+
+
+            if (createStatus == "I")
+            {
+                Response.Redirect("~/GraphView/Index");
+            }
+
+            <div class="btn-group pull-right" id="editOption">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                    <i class="fa fa-cog"></i>
+                </button>
+                <ul class="dropdown-menu pull-right" style="" role="menu">
+                    @if (createStatus == 'A'.ToString() && updateStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "PST_Refer")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Update", "PST_Refer")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Delete", "PST_Refer")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (updateStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Update", "PST_Refer")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Delete", "PST_Refer")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString() && updateStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "PST_Refer")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Update", "PST_Refer")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "PST_Refer")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Delete", "PST_Refer")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "PST_Refer")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                    }
+                    else if (updateStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Update", "PST_Refer")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                    }
+                    else if (deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Delete", "PST_Refer")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+        }
+
+    </div>
+
+    <div class="col-md-12">
+        @if (TempData["ReferCreationMessage"] != null)
+        {
+            <div class="panel-heading text-center">
+                <h4 style="color: #226699">@TempData["ReferCreationMessage"]</h4>
+            </div>
+        }
+
+        <div class="form-group">
+           <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Refer Name" ,htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.REFERNM, htmlAttributes: new { @class = "form-control", autofocus = true })
+                    @Html.ValidationMessageFor(model => model.REFERNM, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Address", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.ADDRESS, htmlAttributes: new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.ADDRESS, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Mobile Number 1", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.MOBNO1, htmlAttributes: new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.MOBNO1, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Mobile Number 2", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.MOBNO2, htmlAttributes: new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.MOBNO2, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Email Id", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.EMAILID, htmlAttributes: new {@class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.EMAILID, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "REFER (%)", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.REFPCNT, htmlAttributes: new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.REFPCNT, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Remarks", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    @Html.TextAreaFor(model => model.REMARKS, htmlAttributes: new { @class = "form-control"})                   
+                </div>
+            </div>
+
+          
+
+
+            @Html.TextBoxFor(model => model.INSLTUDE, new { id = "latlon", style = "display: none;" })
+            <input id="lat" type="hidden" />
+            <input id="lon" type="hidden" />
+
+
+            <br />
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-6">
+                    <input type="submit" class="btn btn-primary btn-block" value="Save" />
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+     //Latitute & longitude
+                    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+                    <script language="javascript" type="text/javascript">
+                        $(function () {
+                            navigator.geolocation.getCurrentPosition(showPosition);
+                            //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+                            function showPosition(position) {
+                                var coordinates = position.coords;
+                                $("#lat").val(coordinates.latitude);
+                                $("#lon").val(coordinates.longitude);
+
+                                $("#latlon").val(
+                                    $("#lat").val() + "," + $("#lon").val()
+                                );
+                            }
+                        });
+                        </script>
+}
+
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/jqueryui")
+    @Scripts.Render("~/bundles/jqueryval")
+
+}

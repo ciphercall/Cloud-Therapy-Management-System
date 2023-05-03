@@ -1,0 +1,92 @@
+﻿@model IEnumerable<AS_Therapy_GL.Models.PST_ITEMMST>
+
+@{
+    ViewBag.Title = "ShowCategoryList";
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+    
+    if ((LoggedUserTp == "CompanyAdmin") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+}
+
+
+
+<div id="contentHeaderBox">
+    <h1 style="padding-left: 16px;">Category List</h1>
+</div>
+<br />
+
+<div class="col-md-12">
+    @if (TempData["UpdateCategoryInfo"] != null)
+    {
+        <div class="panel-heading text-center">
+            <h4>@TempData["UpdateCategoryInfo"] </h4>
+        </div>
+    }
+
+    @if (TempData["DeleteCategoryInfo"] != null)
+    {
+        <div class="panel-heading text-center">
+            <h4>@TempData["DeleteCategoryInfo"] </h4>
+        </div>
+    }
+
+
+    <div class="panel panel-success">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <tr>
+                    @*<th>
+                            @Html.DisplayNameFor(model => model.COMPID)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.CATID)
+                        </th>*@
+                    <th>
+                        @Html.DisplayNameFor(model => model.CATNM)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.REMARKS)
+                    </th>
+                    <th></th>
+                </tr>
+
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        @*<td>
+                                @Html.DisplayFor(modelItem => item.COMPID)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.CATID)
+                            </td>*@
+                        <td>
+                            @Html.DisplayFor(modelItem => item.CATNM)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.REMARKS)
+                        </td>
+                        <td>
+                            @Html.ActionLink("Edit", "EditCategoryList", new { id = item.PST_ITEMMST_ID }) |
+                            @Html.ActionLink("Delete", "DeleteCategory", new { id = item.PST_ITEMMST_ID })
+                        </td>
+                    </tr>
+                }
+
+            </table>
+        </div>
+    </div>
+</div>
+

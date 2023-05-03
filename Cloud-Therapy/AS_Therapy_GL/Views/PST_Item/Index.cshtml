@@ -1,0 +1,368 @@
+﻿@using System.Web.UI.WebControls
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+
+@{
+    ViewBag.Title = "Index";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    var LoggedCompId = HttpContext.Current.Session["loggedCompID"].ToString();
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+
+}
+
+
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.PST_Itemmst.COMPID, new { id = "txtCompId", @Value = LoggedCompId })
+    @Html.HiddenFor(model => model.PST_Itemmst.CATID, new { id = "txtCategoryId", @Value = TempData["categoryId"] })
+
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left: 16px;">Item Information</h1>
+    </div>
+    <br />
+
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+                @*<div class="col-md-1"></div>*@
+                <div class="col-md-2 text-left">@Html.LabelFor(model => model.PST_Itemmst.CATNM, htmlAttributes: new { @class = "control-label" })</div>
+                <div class="col-md-6">
+                    @Html.TextBoxFor(model => model.PST_Itemmst.CATNM, new { @class = "form-control", id = "txtCategoryNm", @placeholder = "Category Name", autofocus = true, tabindex = 1 })
+                    @if (TempData["CategoryMsg"] != null)
+                    {
+                        <h6 style="color: #C03523">@TempData["CategoryMsg"] </h6>
+                    }
+                </div>
+                <div class="col-md-1" style="width: 0%;"><br /></div>
+                <div class="col-md-2"><input id="buttonApplyFilterId" type="submit" class="btn btn-info" value="Submit" name="command" tabindex=2 /></div>
+                @Html.TextBoxFor(model => model.PST_Itemmst.INSLTUDE, new { id = "latlonPos", style = "display: none;" })
+                @Html.TextBoxFor(model => model.PST_Item.INSLTUDE, new { id = "latlonRms", style = "display: none;" })
+                <input id="lat" type="hidden" />
+                <input id="lon" type="hidden" />
+
+            </div>
+        </div>
+
+        @if (TempData["message"] != null)
+        {
+            <div class="text-center">
+                <h4 style="color: #BD7F1C">@TempData["message"] </h4>
+            </div>
+        }
+
+
+        <div class="row">
+            <div class="row">
+                @if (TempData["categoryId"] != null)
+                {
+                    <div class="col-md-12">
+                        @Html.HiddenFor(model => model.PST_Item.COMPID, new { style = "width:3em;", @readonly = "readonly" })
+                        @Html.HiddenFor(model => model.PST_Item.CATID, new { style = "width:3em;", @readonly = "readonly" })
+                        @Html.HiddenFor(model => model.PST_Item.ITEMID, new { style = "width:3em;", @readonly = "readonly" })
+                        <div class="col-md-4">
+                            <span> <b>@Html.Label("name", "Item Name", htmlAttributes: new { @class = "control-label" })</b></span>
+                            @Html.TextBoxFor(model => model.PST_Item.ITEMNM, new { @class = "form-control input-sm", id = "txtItemNm", tabindex = 3 })
+                            @if (TempData["Null_Item_Name"] != null)
+                            {
+                                <h6 style="color: #C03523">@TempData["Null_Item_Name"] <i style="color: #C03523" class="fa fa-question-circle fa-1x"></i></h6>
+                            }
+                        </div>
+
+                        <div class="col-md-2">
+                            <span>  @Html.Label("name", "Unit", htmlAttributes: new { @class = "control-label" })</span>
+                            @Html.TextBoxFor(model => model.PST_Item.UNIT, new { @class = "form-control input-sm", id = "txtUnit", tabindex = 4 })
+                        </div>
+                        <div class="col-md-2">
+                            <span>  @Html.Label("name", "Rate", htmlAttributes: new { @class = "control-label" })</span>
+                            @Html.TextBoxFor(model => model.PST_Item.RATE, new { @class = "form-control input-sm", id = "txtBuyRT", tabindex = 5})
+                        </div>
+                        <div class="col-md-3">
+                            <span>  @Html.Label("name", "Remarks", htmlAttributes: new { @class = "control-label" })</span>
+                            @Html.TextBoxFor(model => model.PST_Item.REMARKS, new { @class = "form-control input-sm", id = "txtRemarks", tabindex =6})
+                        </div>
+
+                        @if (TempData["ShowAddButton"] == null)
+                        {
+                            <div class="col-md-1" style="padding-left: 0px">
+                                <input type="submit" class="btn btn-info input-sm" value="Update" id="btnUpdate" name="command" style="margin-top:25px; margin-left:5px; padding-bottom: 25px" tabindex=7 />
+                            </div>
+                        }
+
+                        else
+                        {
+                            <div class="col-md-1" @*style="padding-left: 0px"*@>
+                                <input type="submit" class="btn btn-info input-sm" value="Add" id="btnAdd" name="command" style="margin-top:25px; margin-left:5px;padding-bottom: 25px" tabindex=7 />
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <br />
+            <div class="col-md-12">
+                @if (TempData["categoryId"] != null)
+                {
+
+                    var categoryId = Convert.ToInt64(TempData["categoryId"]);
+                    Int64 LogCompId = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"].ToString());
+                    var res = db.PST_ItemDbSet.Where(d => d.CATID == categoryId && d.COMPID == LogCompId);
+                    <div class="panel panel-success">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <tr>
+                                    <td>
+                                        <h6>Item Name</h6>
+                                    </td>
+                                    <td>
+                                        <h6>Unit</h6>
+                                    </td>
+                                    <td>
+                                        <h6>Rate</h6>
+                                    </td>
+                                    <td>
+                                        <h6>Remarks</h6>
+                                    </td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+
+                                @foreach (var item in res)
+                                {
+                                    <tr>
+                                        @Html.HiddenFor(model => item.COMPID, new { style = "width:3em;", @readonly = "readonly" })
+                                        @Html.HiddenFor(model => item.CATID, new { style = "width:3em;", @readonly = "readonly" })
+                                        @Html.HiddenFor(model => item.ITEMID, new { style = "width:3em;", @readonly = "readonly" })
+                                        @Html.HiddenFor(model => item.PST_ITEM_ID, new { style = "width:3em;", @readonly = "readonly" })
+
+                                        <td>
+                                            @*@Html.TextBoxFor(model => item.ITEMNM, new { style = "width:10em;", id = "txtItemNm", @readonly = "readonly" })*@
+                                            @Html.DisplayFor(model => item.ITEMNM, new { style = "width:10em;", id = "txtItemNm", @readonly = "readonly" })
+                                        </td>
+                                        <td>
+                                            @*@Html.TextBoxFor(model => item.UNIT, new { style = "width:2em;", id = "txtUnit", @readonly = "readonly" })*@
+                                            @Html.DisplayFor(model => item.UNIT, new { style = "width:6em;", id = "txtUnit", @readonly = "readonly" })
+                                        </td>
+                                        <td>
+                                            @*@Html.TextBoxFor(model => item.BUYRT, new { style = "width:6em; text-align:right", id = "txtBuyRT", @readonly = "readonly" })*@
+                                            @Html.DisplayFor(model => item.RATE, new { style = "width:6em; text-align:right", id = "txtBuyRT", @readonly = "readonly" })
+                                        </td>
+                                        <td>
+                                            @Html.DisplayFor(model => item.REMARKS, new { style = "width: 7em;", id = "txtRemarks", @readonly = "readonly" })
+                                        </td>
+
+                                        <td>
+                                            <span>
+                                                <a href="@Url.Action("EditItemUpdate", new { id=item.PST_ITEM_ID,cid = item.COMPID, catid = item.CATID, itemId=item.ITEMID,itemName=item.ITEMNM })" class="btn btn-sm btn-info">
+                                                    <span class="glyphicon glyphicon-pencil"></span>
+                                                </a>
+                                            </span>
+
+
+                                        </td>
+                                        <td>
+                                            <span>
+                                                <a href="@Url.Action("ItemDelete", new { id = item.PST_ITEM_ID, cid = item.COMPID, catid = item.CATID, itemId = item.ITEMID, itemName = item.ITEMNM })" class="btn btn-sm btn-danger">
+                                                    <span class="glyphicon glyphicon-remove"></span>
+                                                </a>
+                                            </span>
+
+                                        </td>
+
+                                    </tr>
+
+                                }
+
+                            </table>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped"></table>
+                    </div>
+                }
+            </div>
+
+
+        </div>
+    </div>
+
+
+                //Latitute & longitude
+                <script src="http://maps.google.com/maps/api/js?sensor=false">
+                </script>
+
+                <script language="javascript" type="text/javascript">
+                    $(function () {
+                        navigator.geolocation.getCurrentPosition(showPosition);
+                        //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+                        function showPosition(position) {
+                            var coordinates = position.coords;
+                            $("#lat").val(coordinates.latitude);
+                            $("#lon").val(coordinates.longitude);
+
+                            $("#latlonPos").val(
+                                $("#lat").val() + "," + $("#lon").val()
+                            );
+                            $("#latlonRms").val(
+                                $("#lat").val() + "," + $("#lon").val()
+                            );
+                        }
+                    });
+                </script>
+
+
+
+
+                <script type="text/javascript">
+
+                    $(document).ready(function () {
+                        $('#txtCategoryNm').autocomplete(
+                            {
+                                source: '@Url.Action("TagSearch", "PST_Item")',
+                                change: txtOneChanged,
+                                select: function (event, ui) {
+                                    $("#txtCategoryNm").val(ui.item.label);
+                                    txtOneChanged();
+                                },
+                            });
+
+                        function txtOneChanged() {
+
+                            var changedText = $("#txtCategoryNm").val();
+                            var txtBox = document.getElementById('txtCategoryId');
+                            var remarkstxtbox = document.getElementById('txtRemarks');
+
+
+
+                            $.getJSON(
+                                '/PST_Item/ItemNameChanged', { "ChangedText": changedText },
+                                function (result) {
+                                    txtBox.value = result.catid;
+                                    remarkstxtbox.value = result.rmrks;
+                                    //document.getElementById("txtRemarks").focus();
+                                    document.getElementById("txtCategoryNm").focus();
+                                });
+                        }
+
+
+
+
+                    });
+
+
+
+
+                    ////Enter Button Key false;
+                    //$(function () {
+                    //    $('input').keydown(function (e) {
+                    //        if (e.keyCode == 13) {
+                    //            $("input[value='OK']").focus().click();
+                    //            return false;
+                    //        }
+                    //    });
+                    //});
+
+
+                </script>
+
+                <style type="text/css">
+                    .ui-autocomplete {
+                        position: absolute;
+                        cursor: default;
+                        background: #f0ffff;
+                        max-height: 200px;
+                        overflow-y: auto;
+                        /* prevent horizontal scrollbar */
+                        overflow-x: hidden;
+                        /* add padding to account for vertical scrollbar */
+                        padding-right: 20px;
+                    }
+
+
+                    /*html .ui-autocomplete {
+                                    width: 1px;
+                                }
+
+                                .ui-menu {
+                                    list-style: none;
+                                    padding: 2px;
+                                    margin: 0;
+                                    display: block;
+                                    float: left;
+                                }
+
+                                    .ui-menu .ui-menu {
+                                        margin-top: -3px;
+                                    }
+
+                                    .ui-menu .ui-menu-item {
+                                        margin: 0;
+                                        padding: 0;
+                                        zoom: 1;
+                                        float: left;
+                                        clear: left;
+                                        width: 100%;
+                                    }
+
+                                        .ui-menu .ui-menu-item a {
+                                            text-decoration: none;
+                                            display: block;
+                                            padding: .2em .4em;
+                                            line-height: 1.5;
+                                            zoom: 1;
+                                        }
+
+                                            .ui-menu .ui-menu-item a.ui-state-hover,
+                                            .ui-menu .ui-menu-item a.ui-state-active {
+                                                font-weight: normal;
+                                                margin: -1px;
+                                            }*/
+                </style>
+
+
+}
+
+@*<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+    <link href="~/Content/jquery.jqGrid/ui.jqgrid.css" rel="stylesheet" />
+    <script src="~/Scripts/jquery-1.9.1.min.js"></script>
+    <script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+    <script src="~/Scripts/i18n/grid.locale-en.js"></script>*@
+@*<script src="~/Scripts/jquery.jqGrid.min.js"></script>*@
+@* Grid view Script ,that means Grid View Table *@
+@*<script src="~/Scripts/_CategoryAsl.js"></script>*@
+
+
+
+
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>

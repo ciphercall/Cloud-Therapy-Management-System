@@ -1,0 +1,309 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using System.Data.SqlTypes
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+@{
+    ViewBag.Title = "Get_ClosingStock_Details";
+    Layout = null;
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    var companyId = Convert.ToInt64(Model.pst_Trans.COMPID);
+
+    string companyName = "", address = "", contactNo = "";
+    var re = from m in db.AslCompanyDbSet where m.COMPID == companyId select new { m.COMPNM, m.ADDRESS, m.CONTACTNO };
+    foreach (var n in re)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    DateTime fdate = Convert.ToDateTime(Model.Report_FromDate);
+    string ddt = fdate.ToString("dd-MMM-yyyy");
+    var fromdate = ddt;
+
+    DateTime tDate = Convert.ToDateTime(Model.Report_ToDate);
+    string tdd = tDate.ToString("dd-MMM-yyyy");
+    var todate = tdd;
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+
+
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="10%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+
+                </tr>
+                <tr style="background-color: #00689b">
+                    <td colspan="12">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<br />  @contactno</p>
+                    </td>
+
+                    <td colspan="6" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>
+                <tr>
+                    <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Closing Stock Details</td>
+                    <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="9" style="padding:4px;font-weight:bold">From Date : <span style="font-weight: bold">@fromdate</span></td>
+                    <td colspan="9" style="font-weight: bold"> To Date : <span style="font-weight:bold">@todate</span></td>
+                </tr>
+
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="4" style="color: white; padding: 4px" align="center">Item Name</td>
+                    <td colspan="1" style="color: white; padding: 4px" align="center">Unit</td>
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Opening</td>
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Purchase</td>
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Sale</td>
+                    <td colspan="2" style="color: white; padding: 4px" align="center">In</td>
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Out</td>
+                    <td colspan="3" style="color: white; padding: 4px" align="center">Balance</td>
+
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    Decimal total_BQTY = 0, total_SQTY = 0, total_INQTY = 0, total_OUTQTY = 0, total_Balance = 0;
+                }
+                @{
+
+
+                    System.Data.SqlClient.SqlConnection conn1 = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+                    string query1 = string.Format(
+                        "SELECT DISTINCT CATNM FROM PST_TRANS INNER JOIN PST_ITEMMST ON PST_ITEMMST.CATID = SUBSTRING(convert(nvarchar(10),ITEMID,103),1,5) AND PST_TRANS.COMPID=PST_ITEMMST.COMPID AND PST_TRANS.COMPID='{0}'",
+                        companyId);
+                    System.Data.SqlClient.SqlCommand cmd1 = new System.Data.SqlClient.SqlCommand(query1, conn1);
+                    conn1.Open();
+                    SqlDataAdapter da1 = new SqlDataAdapter(cmd1);
+                    DataTable ds1 = new DataTable();
+                    da1.Fill(ds1);
+                    string CategoryName = "";
+
+                    foreach (DataRow row1 in ds1.Rows)
+                    {
+                        CategoryName = row1["CATNM"].ToString();
+
+                        System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+                        string query = string.Format(
+                            "SELECT CATNM, ITEMNM, UNIT, B.ITEMID, SUM(OPQTY) OPQTY, SUM(BQTY) BQTY, SUM(SQTY) SQTY, SUM(INQTY) INQTY, SUM(OUTQTY) OUTQTY " +
+    "FROM( " +
+    "SELECT ITEMID, (SUM(ISNULL(INQTY,0)) - SUM(ISNULL(OUTQTY,0))) OPQTY, 0 BQTY, 0 SQTY, 0 INQTY, 0 OUTQTY " +
+    "FROM( " +
+    "SELECT ITEMID, ISNULL(QTY,0) INQTY, 0 OUTQTY FROM PST_TRANS " +
+    "WHERE TRANSTP IN ('BUY','IRTS','IREC','ITRF') AND COMPID='{0}' AND SUBSTRING(CONVERT(CHAR(9),ITEMID),4,2)='03' AND TRANSDT < '{1}' " +
+    "UNION " +
+    "SELECT ITEMID, 0 INQTY, ISNULL(QTY,0) OUTQTY FROM PST_TRANS " +
+    "WHERE TRANSTP IN ('SALE','IRTB','IISS','ITRF') AND COMPID='{0}' AND SUBSTRING(CONVERT(CHAR(9),ITEMID),4,2)='03' AND TRANSDT < '{1}' " +
+    ") A GROUP BY ITEMID " +
+    "UNION " +
+    "SELECT ITEMID, 0 OPQTY, SUM(QTY) BQTY, 0 SQTY, 0 INQTY, 0 OUTQTY " +
+    "FROM PST_TRANS WHERE COMPID='{0}' AND SUBSTRING(CONVERT(CHAR(9),ITEMID),4,2)='03' AND TRANSTP = 'BUY'  AND TRANSDT BETWEEN '{1}' AND '{2}' GROUP BY  ITEMID " +
+    "UNION " +
+    "SELECT ITEMID, 0 OPQTY, 0 BQTY, SUM(QTY) SQTY, 0 INQTY, 0 OUTQTY " +
+    "FROM PST_TRANS WHERE COMPID='{0}' AND SUBSTRING(CONVERT(CHAR(9),ITEMID),4,2)='03' AND TRANSTP = 'SALE' AND TRANSDT BETWEEN '{1}' AND '{2}' GROUP BY  ITEMID " +
+    "UNION " +
+    "SELECT ITEMID, 0 OPQTY, 0 BQTY, 0 SQTY, SUM(QTY) INQTY, 0 OUTQTY " +
+    "FROM PST_TRANS WHERE TRANSTP IN ('IREC','IRTS','ITRF') AND COMPID='{0}' AND SUBSTRING(CONVERT(CHAR(9),ITEMID),4,2)='03' AND TRANSDT BETWEEN '{1}' AND '{2}' GROUP BY  ITEMID " +
+    "UNION " +
+    "SELECT ITEMID, 0 OPQTY, 0 BQTY, 0 SQTY, 0 INQTY, SUM(QTY) OUTQTY " +
+    "FROM PST_TRANS WHERE TRANSTP IN ('IISS','IRTB','ITRF') AND COMPID='{0}' AND SUBSTRING(CONVERT(CHAR(9),ITEMID),4,2)='03' AND TRANSDT BETWEEN '{1}' AND '{2}' GROUP BY  ITEMID " +
+    ") B LEFT OUTER JOIN PST_ITEM ON PST_ITEM.ITEMID = B.ITEMID AND PST_ITEM.COMPID = '{0}' " +
+    "LEFT OUTER JOIN PST_ITEMMST ON PST_ITEMMST.CATID = SUBSTRING(convert(nvarchar(10),B.ITEMID,103),1,5) " +
+    "GROUP BY CATNM, ITEMNM, UNIT, B.ITEMID " +
+    "ORDER BY CATNM, ITEMNM ",
+                            companyId, fdate, todate);
+                        System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn);
+                        conn.Open();
+                        SqlDataAdapter da = new SqlDataAdapter(cmd);
+                        DataTable ds = new DataTable();
+                        da.Fill(ds);
+
+                        string CATNM = "", ITEMNM = "";
+                        Int64 ITEMID = 0;
+                        Decimal OPQTY = 0, BQTY = 0, SQTY = 0, INQTY = 0, OUTQTY = 0;
+                        var UNIT = "";
+                        Decimal Balance = 0;
+
+                        foreach (DataRow row in ds.Rows)
+                        {
+
+                            CATNM = row["CATNM"].ToString();
+                            if (CategoryName == CATNM)
+                            {
+                                <tr>
+                                    <td><br /></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" align="left" style="font-weight:bold">
+                                        Category:
+                                    </td>
+                                    <td colspan="16" align="left" style="font-weight:bold">
+                                        @CategoryName
+                                    </td>
+                                </tr>
+                                break;
+                            }
+
+                        }
+
+
+                        foreach (DataRow row in ds.Rows)
+                        {
+
+                            CATNM = row["CATNM"].ToString();
+
+                            if (CategoryName == CATNM)
+                            {
+                                ITEMNM = row["ITEMNM"].ToString();
+                                UNIT = Convert.ToString(row["UNIT"]);
+                                ITEMID = Convert.ToInt64(row["ITEMID"]);
+                                OPQTY = Convert.ToDecimal(row["OPQTY"]);
+                                BQTY = Convert.ToDecimal(row["BQTY"]);
+                                SQTY = Convert.ToDecimal(row["SQTY"]);
+                                INQTY = Convert.ToDecimal(row["INQTY"]);
+                                OUTQTY = Convert.ToDecimal(row["OUTQTY"]);
+
+                                Balance = OPQTY + BQTY - SQTY + INQTY - OUTQTY;
+
+
+
+                                <tr style="outline:thin solid">
+                                    <td align="center" colspan="4">
+                                        @ITEMNM
+                                    </td>
+                                    <td align="center" colspan="1">
+                                        @UNIT
+                                    </td>
+                                    <td align="right" colspan="2">
+                                        @OPQTY
+                                    </td>
+                                    <td align="right" colspan="2">
+                                        @BQTY
+                                    </td>
+                                    <td align="right" colspan="2">
+                                        @SQTY
+                                    </td>
+                                    <td align="right" colspan="2">
+                                        @INQTY
+                                    </td>
+                                    <td align="right" colspan="2">
+                                        @OUTQTY
+                                    </td>
+                                    <td align="right" colspan="3">
+                                        @Balance
+                                    </td>
+                                </tr>
+
+                                total_BQTY = total_BQTY + BQTY;
+                                total_SQTY = total_SQTY + SQTY;
+                                total_INQTY = total_INQTY + INQTY;
+                                total_OUTQTY = total_OUTQTY + OUTQTY;
+                            }
+                        }
+                        conn.Close();
+                    }
+                    conn1.Close();
+
+
+
+
+
+
+
+                }
+                @*<tr>
+                        <td colspan="2"></td>
+                        <td colspan="2"></td>
+                        <td colspan="1"></td>
+                        <td align="right" colspan="3" style="font-weight:bold">
+                            Total:
+                        </td>
+                        <td align="right" colspan="2" style="font-weight:bold">
+                            @total_BQTY
+                        </td>
+                        <td align="right" colspan="2" style="font-weight:bold">
+                            @total_SQTY
+                        </td>
+                        <td align="right" colspan="2" style="font-weight:bold">
+                            @total_INQTY
+                        </td>
+                        <td align="right" colspan="2" style="font-weight:bold">
+                            @total_OUTQTY
+                        </td>
+                        <td align="right" colspan="2" style="font-weight:bold">
+                            @{
+                                total_Balance = Opening + total_BQTY - total_SQTY + total_INQTY - total_OUTQTY;
+                            }
+                            @total_Balance
+                        </td>
+                    </tr>*@
+
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

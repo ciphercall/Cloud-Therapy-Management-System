@@ -1,0 +1,516 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.AslUserco
+
+@{
+
+    ViewBag.Title = "Create";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var UserNameVL = "";
+    var LoginIdVL = "";
+    //var passwordVL = "";
+
+    List<SelectListItem> listStatus = new List<SelectListItem>();
+    listStatus.Add(new SelectListItem { Text = "Active", Value = "A" });
+    listStatus.Add(new SelectListItem { Text = "Inactive", Value = "I" });
+
+
+    List<SelectListItem> listLogInBy = new List<SelectListItem>();
+    listLogInBy.Add(new SelectListItem { Text = "Mobile Number", Value = "MOBNO" });
+    listLogInBy.Add(new SelectListItem { Text = "Email Address", Value = "EMAIL" });
+
+    List<SelectListItem> listOpTp = new List<SelectListItem>();
+    //listOpTp.Add(new SelectListItem { Text = "Company Admin", Value = "CompanyAdmin" });
+    listOpTp.Add(new SelectListItem { Text = "User Admin", Value = "UserAdmin" });
+    listOpTp.Add(new SelectListItem { Text = "User", Value = "User" });
+
+    var comid = "";
+    var comnm = "";
+    var comad = "";
+    var comco = "";
+    var comemail = "";
+    var compassword = "";
+
+    AS_Therapy_GL.Models.Therapy_GL_DbContext db = new AS_Therapy_GL.Models.Therapy_GL_DbContext();
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedCompId = HttpContext.Current.Session["loggedCompID"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A")
+    {
+        var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+        if (LoggedCompanyStatus == "I")
+        {
+            Response.Redirect(Url.Action("Index", "Logout"));
+        }
+        else
+        {
+            System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+
+            string query = string.Format("SELECT AslUsercoes.ADDRESS, AslUsercoes.COMPID, AslUsercoes.USERID, AslCompanies.COMPNM FROM AslUsercoes INNER JOIN AslCompanies ON AslUsercoes.COMPID = AslCompanies.COMPID where AslUsercoes.COMPID='{0}' AND AslUsercoes.OPTP = '{1}'", LoggedCompId, LoggedUserTp);
+
+            System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn);
+            conn.Open();
+
+            SqlDataAdapter da = new SqlDataAdapter(cmd);
+            DataTable ds = new DataTable();
+            da.Fill(ds);
+
+            foreach (DataRow row in ds.Rows)
+            {
+                comid = row["COMPID"].ToString();
+                comad = row["ADDRESS"].ToString();
+                comnm = row["COMPNM"].ToString();
+            }
+
+            comco = "880";
+
+            conn.Close();
+        }
+
+    }
+    else if (LoggedUserTp == "AslSuperadmin" && LoggedUserStatus == "A")
+    {
+        comnm = TempData["companyName"].ToString();
+
+        AslUserco aslUserco = new AslUserco();
+        aslUserco = (AslUserco)TempData["User"];
+        comid = aslUserco.COMPID.ToString();
+        comad = aslUserco.ADDRESS.ToString();
+        comco = aslUserco.MOBNO.ToString();
+        comemail = aslUserco.EMAILID.ToString();
+        compassword = aslUserco.LOGINPW;
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+}
+<link href="~/Content/bootstrap-3.2.0-dist/css/bootstrap-theme.css" rel="stylesheet" />
+<script src="~/Content/bootstrap-3.2.0-dist/js/bootstrap.js"></script>
+@*bootstrap -Clock Picker*@
+<link href="~/Content/bootstrap-clockpicker/src/clockpicker.css" rel="stylesheet" />
+<script src="~/Content/bootstrap-clockpicker/src/clockpicker.js"></script>
+<link href="~/Content/bootstrap-clockpicker/src/standalone.css" rel="stylesheet" />
+
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+
+    @Html.HiddenFor(model => model.COMPID, new { @Value = comid })
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Create User Information</h1>
+        @if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A")
+        {
+            var createStatus = "";
+            var updateStatus = "";
+            var deleteStatus = "";
+            var status = "";
+            var loggedUserID = HttpContext.Current.Session["loggedUserID"].ToString();
+            System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+
+            string query1 = string.Format("SELECT STATUS, INSERTR, UPDATER, DELETER FROM ASL_ROLE WHERE  CONTROLLERNAME='AslUserCo' AND COMPID='{0}' AND USERID = '{1}'", LoggedCompId, loggedUserID);
+
+            System.Data.SqlClient.SqlCommand cmd1 = new System.Data.SqlClient.SqlCommand(query1, conn);
+            conn.Open();
+
+            SqlDataAdapter da1 = new SqlDataAdapter(cmd1);
+            DataTable ds1 = new DataTable();
+            da1.Fill(ds1);
+
+            foreach (DataRow row in ds1.Rows)
+            {
+                status = row["STATUS"].ToString();
+                createStatus = row["INSERTR"].ToString();
+                updateStatus = row["UPDATER"].ToString();
+                deleteStatus = row["DELETER"].ToString();
+            }
+            conn.Close();
+            
+
+            if (createStatus == "A")
+            {
+
+            }
+            else if (updateStatus == "A")
+            {
+                Response.Redirect("~/AslUserCo/UpdateForm");
+            }
+            else if (deleteStatus == "A")
+            {
+                Response.Redirect("~/AslUserCo/DeleteForm");
+            }
+
+
+            if (createStatus == "I")
+            {
+                Response.Redirect("~/GraphView/Index");
+            }
+            
+            
+
+            <div class="btn-group pull-right" id="editOption">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                    <i class="fa fa-cog"></i>
+                </button>
+                <ul class="dropdown-menu pull-right" style="" role="menu">
+                    @if (createStatus == 'A'.ToString() && updateStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "AslUserCo")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("UpdateForm", "AslUserCo")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("DeleteForm", "AslUserCo")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (updateStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("UpdateForm", "AslUserCo")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("DeleteForm", "AslUserCo")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString() && updateStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "AslUserCo")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("UpdateForm", "AslUserCo")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "AslUserCo")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("DeleteForm", "AslUserCo")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "AslUserCo")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                    }
+                    else if (updateStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("UpdateForm", "AslUserCo")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                    }
+                    else if (deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("DeleteForm", "AslUserCo")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+        }
+
+    </div>
+    <br />
+    <div class="col-md-12">
+        @if (TempData["UserCreationMessage"] != null)
+        {
+            <div class="panel-heading text-center">
+                <h4 style="color: #226699">@TempData["UserCreationMessage"]</h4>
+            </div>
+        }
+
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Company Name")
+                </div>
+                <div class="col-md-8">
+                    @Html.TextBox("name", comnm, new { @class = "form-control", @readonly = "readonly" })
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "User Name")
+                </div>
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.USERNM, htmlAttributes: new { @class = "form-control", @Value = UserNameVL, autofocus = true })
+                    @Html.ValidationMessageFor(model => model.USERNM, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.DEPTNM, htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.DEPTNM, htmlAttributes: new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.DEPTNM, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.OPTP, htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @if (LoggedUserTp == "AslSuperadmin")
+                    {
+                        @Html.TextBoxFor(model => model.OPTP, htmlAttributes: new { @class = "form-control", @Value = "Company Admin", @readonly = "readonly" })
+                    }
+                    else
+                    {
+                        @Html.DropDownListFor(model => model.OPTP, listOpTp, "--Select Operation Type--", htmlAttributes: new { @class = "form-control" })
+                    }
+
+                    @Html.ValidationMessageFor(model => model.OPTP, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.ADDRESS, htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.ADDRESS, htmlAttributes: new { @class = "form-control", @Value = comad })
+                    @Html.ValidationMessageFor(model => model.ADDRESS, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.MOBNO, htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.MOBNO, htmlAttributes: new { id = "txtMobileID", @class = "form-control", @Value = comco })
+                    @Html.ValidationMessageFor(model => model.MOBNO, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.EMAILID, htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.EMAILID, htmlAttributes: new { id = "txtEmailID", @class = "form-control", @Value = comemail })
+                    @Html.ValidationMessageFor(model => model.EMAILID, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.LOGINBY, htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    @Html.DropDownListFor(model => model.LOGINBY, listLogInBy, "--Select Login By--", htmlAttributes: new { id = "dropdownBoxId", @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.LOGINBY, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.LOGINID, htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.LOGINID, htmlAttributes: new { id = "loginTextID", @class = "form-control", @readonly = "readonly" })
+                    @Html.ValidationMessageFor(model => model.LOGINID, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.LOGINPW, htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    @Html.PasswordFor(model => model.LOGINPW, htmlAttributes: new { @class = "form-control", @Value = compassword })
+                    @Html.ValidationMessageFor(model => model.LOGINPW, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.TIMEFR, htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    <div class="input-group clockpicker" data-align="top" data-autoclose="true">
+                        @Html.TextBoxFor(model => model.TIMEFR, htmlAttributes: new { @class = "form-control", @Value = "00:01" })
+                        <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-time"></span>
+                        </span>
+                    </div>
+                    @Html.ValidationMessageFor(model => model.TIMEFR, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.TIMETO, htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    <div class="input-group clockpicker" data-align="top" data-autoclose="true">
+                        @Html.TextBoxFor(model => model.TIMETO, htmlAttributes: new { @class = "form-control", @Value = "23:59" })
+                        <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-time"></span>
+                        </span>
+                    </div>
+                    @Html.ValidationMessageFor(model => model.TIMETO, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.STATUS, htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    @Html.DropDownListFor(model => model.STATUS, listStatus, "--Select STATUS--", htmlAttributes: new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.STATUS, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+
+            @Html.TextBoxFor(model => model.INSLTUDE, new { id = "latlon", style = "display: none;" })
+            <input id="lat" type="hidden" />
+            <input id="lon" type="hidden" />
+
+
+            <br />
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-6">
+                    <input type="submit" class="btn btn-primary btn-block" value="Save" />
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+
+                    //datatime picker script
+                    <script type="text/javascript">
+                        $('.clockpicker').clockpicker();
+                    </script>
+
+
+                    //Latitute & longitude
+                    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+                    <script language="javascript" type="text/javascript">
+                        $(function () {
+                            navigator.geolocation.getCurrentPosition(showPosition);
+                            //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+                            function showPosition(position) {
+                                var coordinates = position.coords;
+                                $("#lat").val(coordinates.latitude);
+                                $("#lon").val(coordinates.longitude);
+
+                                $("#latlon").val(
+                                    $("#lat").val() + "," + $("#lon").val()
+                                );
+                            }
+                        });
+
+                        //passing value from textBox(Mobile Number,Email ID) to another textBox(Login By phoneNo/EmailId?) by selected dropdownList
+                        $(function () {
+                            $('#dropdownBoxId').change(function () {
+                                // gets the value from the drop down box
+                                var selected = $("#dropdownBoxId option:selected").text();
+
+                                var txtMobile = $("#txtMobileID").val();
+                                var txtEmail = $("#txtEmailID").val();
+                                // puts the value into the textbox
+                                var txtBox = document.getElementById('loginTextID');
+
+                                if (selected == "Mobile Number") {
+                                    txtBox.value = txtMobile;
+                                    document.getElementById("loginTextID").focus();
+                                }
+                                else if (selected == "Email Address") {
+                                    txtBox.value = txtEmail;
+                                    document.getElementById("loginTextID").focus();
+                                }
+                                else {
+                                    txtBox.value = "";
+                                }
+
+                            });
+                        });
+
+                        //tagsearch
+                        $(document).ready(function () {
+                            $('#tags').autocomplete(
+                            {
+                                source: '@Url.Action("TagSearch", "AslUserCO")'
+                            });
+                        });
+
+
+
+                    </script>
+}
+
+
+
+<style type="text/css">
+    .completionList {
+        border: solid 1px Gray;
+        margin: 0px;
+        padding: 3px;
+        height: 120px;
+        overflow: auto;
+        background-color: #FFFFFF;
+    }
+
+    .listItem {
+        color: #191919;
+    }
+
+    .itemHighlighted {
+        background-color: #ADD6FF;
+    }
+</style>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/jqueryui")
+    @Scripts.Render("~/bundles/jqueryval")
+
+}

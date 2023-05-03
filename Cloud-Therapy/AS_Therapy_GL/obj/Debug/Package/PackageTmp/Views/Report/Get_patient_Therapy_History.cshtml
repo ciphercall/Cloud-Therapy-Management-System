@@ -1,0 +1,328 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using System.Data.SqlTypes
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+@{
+    ViewBag.Title = "Get_patient_Therapy_History";
+    Layout = null;
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    var companyId = Convert.ToInt64(Model.Pst_Patient.COMPID);
+    var patientID = Convert.ToInt64(Model.Pst_Patient.PATIENTID);
+    var PatientIDM = Convert.ToInt64(Model.Pst_Patient.PATIENTIDM);
+
+
+    string companyName = "", address = "", contactNo = "";
+    var re = from m in db.AslCompanyDbSet where m.COMPID == companyId select new { m.COMPNM, m.ADDRESS, m.CONTACTNO };
+    foreach (var n in re)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+
+    var findPatientInfo = from patient in db.PST_PatientDbSet
+                          join refer in db.PST_ReferDbSet on patient.COMPID equals refer.COMPID
+                          where patient.COMPID == companyId && patient.REFERID == refer.REFERID
+                                && patient.PATIENTID == patientID && patient.PATIENTIDM == PatientIDM
+                          select
+                              new { patient.PATIENTNM, patient.ADDRESS, patient.GENDER, patient.AGE, patient.MOBNO1, refer.REFERNM, patient.REMARKS };
+
+    string patientName = "", patientAddress = "", Gender = "", Age = "", MobileNo1 = "", referName = "", Remarks = "";
+    foreach (var m in findPatientInfo)
+    {
+        patientName = m.PATIENTNM;
+        patientAddress = m.ADDRESS;
+        Gender = m.GENDER.ToString();
+        Age = m.AGE.ToString();
+        MobileNo1 = m.MOBNO1.ToString();
+        referName = m.REFERNM;
+        Remarks = m.REMARKS;
+    }
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="10%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+
+                </tr>
+                <tr style="background-color: #00689b">
+                    <td colspan="12">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<br />  @contactno</p>
+                    </td>
+
+                    <td colspan="6" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>
+                <tr>
+                    <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Patient Therapy History</td>
+                    <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="9" align="left" style="padding:4px;font-weight:bold">Patient Name<span style="font-weight: bold">: @patientName</span></td>
+                    <td colspan="9" align="left" style="font-weight: bold">Gender : <span style="font-weight:bold">@Gender</span></td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="9" align="left" style="padding:4px;font-weight:bold">Address<span style="font-weight: bold">: @patientAddress</span></td>
+                    <td colspan="9" align="left" style="font-weight: bold">Mobile No : <span style="font-weight:bold">@MobileNo1</span></td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="9" align="left" style="padding:4px;font-weight:bold">Refer Name<span style="font-weight: bold">: @referName</span></td>
+                    <td colspan="9" align="left" style="font-weight: bold">Age : <span style="font-weight:bold">@Age</span></td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="9" align="left" style="padding:4px;font-weight:bold">Remarks<span style="font-weight: bold">: @Remarks</span></td>
+                </tr>
+
+                @{
+                    var patientInfo_Therapy = (from m in db.PST_TransDbSet where m.COMPID == companyId && m.PATIENTID == patientID && m.ITEMTP == "THERAPY" select m).ToList();
+                    if (patientInfo_Therapy.Count != 0)
+                    {
+                        <tr><td><br /></td></tr>
+                        <tr>
+                            <td colspan="3" style=" padding: 4px" align="Left">Item Type</td>
+                            <td colspan="6" style=" padding: 4px" align="Left">: THERAPY</td>
+                        </tr>
+                        <tr style="background-color: #00689b; outline: thin solid">
+                            <td colspan="5" style="color: white; padding: 4px" align="center">Item Name</td>
+                            <td colspan="5" style="color: white; padding: 4px" align="center">Position</td>
+                            <td colspan="2" style="color: white; padding: 4px" align="center">Qty</td>
+                            <td colspan="3" style="color: white; padding: 4px" align="right">Rate</td>
+                            <td colspan="3" style="color: white; padding: 4px" align="right">Amount</td>
+                        </tr>
+                    }
+                }
+
+            </thead>
+            <tbody>
+                @{
+                    Decimal TOTAL_AMOUNT = 0;
+                }
+                @{
+
+                    if (patientInfo_Therapy.Count != 0)
+                    {
+                        System.Data.SqlClient.SqlConnection conn1 = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+                        string query1 = string.Format(
+                            "SELECT A.TRANSDT, PST_ITEM.ITEMNM POSNNM, A.ITEMNM, QTY, A.RATE, AMOUNT FROM( " +
+                            "SELECT PST_TRANS.COMPID, TRANSDT, PST_TRANS.ITEMID, PST_ITEM.ITEMNM, POSNID, QTY, PST_TRANS.RATE, AMOUNT  FROM PST_TRANS " +
+                            "INNER JOIN PST_ITEM ON PST_TRANS.COMPID = PST_ITEM.COMPID AND PST_TRANS.ITEMID = PST_ITEM.ITEMID " +
+                            "WHERE PST_TRANS.COMPID = '{0}' AND PATIENTID = '{1}' AND ITEMTP = 'THERAPY' " +
+                            ") A INNER JOIN PST_ITEM ON A.COMPID = PST_ITEM.COMPID AND A.POSNID = PST_ITEM.ITEMID " +
+                            "ORDER BY A.TRANSDT ",
+                            companyId, patientID);
+                        System.Data.SqlClient.SqlCommand cmd1 = new System.Data.SqlClient.SqlCommand(query1, conn1);
+                        conn1.Open();
+                        SqlDataAdapter da1 = new SqlDataAdapter(cmd1);
+                        DataTable ds1 = new DataTable();
+                        da1.Fill(ds1);
+
+
+                        string itemName = "", positionName = "";
+                        Decimal QTY = 0, rate = 0, amount = 0;
+
+
+
+
+                        foreach (DataRow row in ds1.Rows)
+                        {
+
+                            itemName = row["ITEMNM"].ToString();
+                            positionName = row["POSNNM"].ToString();
+                            QTY = Convert.ToDecimal(row["QTY"]);
+                            rate = Convert.ToDecimal(row["RATE"]);
+                            amount = Convert.ToDecimal(row["AMOUNT"]);
+
+                            <tr style="outline:thin solid">
+                                <td align="center" colspan="5">
+                                    @itemName
+                                </td>
+                                <td align="center" colspan="5">
+                                    @positionName
+                                </td>
+                                <td align="center" colspan="2">
+                                    @QTY
+                                </td>
+                                <td align="right" colspan="3">
+                                    @rate
+                                </td>
+                                <td align="right" colspan="3">
+                                    @amount
+                                </td>
+                            </tr>
+
+                            TOTAL_AMOUNT = TOTAL_AMOUNT + amount;
+
+                        }
+                        conn1.Close();
+                        <tr>
+                            <td colspan="5"></td>
+                            <td colspan="5"></td>
+                            <td colspan="2"></td>
+                            <td align="right" colspan="3" style="font-weight:bold">
+                                Total:
+                            </td>
+                            <td align="right" colspan="3" style="font-weight:bold">
+                                @TOTAL_AMOUNT
+                            </td>
+                        </tr>
+
+                    }
+
+                }
+
+            </tbody>
+            <thead>
+                @{
+                    var patientInfo_ACCESSORIES = (from m in db.PST_TransDbSet where m.COMPID == companyId && m.PATIENTID == patientID && m.ITEMTP == "ACCESSORIES" select m).ToList();
+                    if (patientInfo_ACCESSORIES.Count != 0)
+                    {
+                        <tr><td><br /></td></tr>
+                        <tr>
+                            <td colspan="3" style=" padding: 4px" align="Left">Item Type</td>
+                            <td colspan="6" style=" padding: 4px" align="Left">: ACCESSORIES</td>
+                        </tr>
+                        <tr style="background-color: #00689b; outline: thin solid">
+                            <td colspan="6" style="color: white; padding: 4px" align="center">Item Name</td>
+                            <td colspan="3" style="color: white; padding: 4px" align="center">Qty</td>
+                            <td colspan="4" style="color: white; padding: 4px" align="right">Rate</td>
+                            <td colspan="5" style="color: white; padding: 4px" align="right">Amount</td>
+                        </tr>
+                    }
+                }
+
+            </thead>
+            <tbody>
+                @{
+                    Decimal TOTAL_AMOUNT_1 = 0;
+                }
+                @{
+
+                    if (patientInfo_Therapy.Count != 0)
+                    {
+                        System.Data.SqlClient.SqlConnection conn1 = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+                        string query1 = string.Format(
+                            "SELECT TRANSDT, PST_ITEM.ITEMNM, QTY, PST_TRANS.RATE, AMOUNT  FROM PST_TRANS " +
+    "INNER JOIN PST_ITEM ON PST_TRANS.COMPID = PST_ITEM.COMPID AND PST_TRANS.ITEMID = PST_ITEM.ITEMID " +
+    "WHERE PST_TRANS.COMPID = '{0}' AND PATIENTID = '{1}' AND ITEMTP = 'ACCESSORIES' " +
+    "ORDER BY TRANSDT ",
+                            companyId, patientID);
+                        System.Data.SqlClient.SqlCommand cmd1 = new System.Data.SqlClient.SqlCommand(query1, conn1);
+                        conn1.Open();
+                        SqlDataAdapter da1 = new SqlDataAdapter(cmd1);
+                        DataTable ds1 = new DataTable();
+                        da1.Fill(ds1);
+
+
+                        string itemName = "";
+                        Decimal QTY = 0, rate = 0, amount = 0;
+
+                        foreach (DataRow row in ds1.Rows)
+                        {
+
+                            itemName = row["ITEMNM"].ToString();
+                            QTY = Convert.ToDecimal(row["QTY"]);
+                            rate = Convert.ToDecimal(row["RATE"]);
+                            amount = Convert.ToDecimal(row["AMOUNT"]);
+
+                            <tr style="outline:thin solid">
+                                <td align="center" colspan="6">
+                                    @itemName
+                                </td>
+                                <td align="center" colspan="3">
+                                    @QTY
+                                </td>
+                                <td align="right" colspan="4">
+                                    @rate
+                                </td>
+                                <td align="right" colspan="5">
+                                    @amount
+                                </td>
+                            </tr>
+
+                            TOTAL_AMOUNT_1 = TOTAL_AMOUNT_1 + amount;
+
+                        }
+                        conn1.Close();
+                        <tr>
+                            <td colspan="6"></td>
+                            <td colspan="3"></td>
+                            <td align="right" colspan="4" style="font-weight:bold">
+                                Total:
+                            </td>
+                            <td align="right" colspan="5" style="font-weight:bold">
+                                @TOTAL_AMOUNT_1
+                            </td>
+                        </tr>
+
+                    }
+
+                }
+
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

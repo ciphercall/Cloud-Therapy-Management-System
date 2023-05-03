@@ -1,0 +1,497 @@
+﻿@using AS_Therapy_GL.Models
+@using AS_Therapy_GL.Models.ASL
+@model AS_Therapy_GL.Models.PageModel
+@{
+    ViewBag.Title = "Index";
+
+    //var userCookie = Request.Cookies["user"];
+    //if (userCookie == null)
+    //{
+    //    Response.Redirect(Url.Action("Index", "Login"));
+    //}
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if (LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    if (System.Web.HttpContext.Current.Session["loggedCompID"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+
+    Int64 compid = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+    Int64 loggedUserID = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+    List<SelectListItem> aslUsercos = new List<SelectListItem>();
+    var result = (from n in db.AslUsercoDbSet where n.COMPID == compid select n).ToList();
+    foreach (var n in result)
+    {
+        aslUsercos.Add(new SelectListItem { Text = n.USERNM, Value = n.USERID.ToString() });
+    }
+}
+
+
+
+
+@*<link href="~/Content/fullcalendar/css/bootstrap.css" rel="stylesheet" />*@
+<link href="~/Content/fullcalendar/css/fullcalendar.css" rel="stylesheet" />
+<link href="~/Content/fullcalendar/css/Site.css" rel="stylesheet" />
+
+@using (Html.BeginForm())
+{
+    @*<div id="contentHeaderBox" style="border-bottom: none;height: auto">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="active">@Html.ActionLink("Scheduler Calendar", "Index", "GraphView", new { style = "color: black;background-color: gainsboro;" })</li>
+            </ul>
+        </div>
+            <br>*@
+    <div class="panel panel-primary">
+        <!-- Default panel contents -->
+        <div class="panel-heading">Scheduler</div>
+        <div class="container">
+            @*<div>
+                    <a href="#" id="btnInit" class="btn btn-secondary">Initialise database!</a>
+                </div>*@
+            <div id='calendar' style="width:65%"></div>
+        </div>
+
+
+        <div id="popupEventForm" class="modal" style="display: none;height: 345px;">
+            <div class="modal-header" Style="text-align: center;"><h3>Event Information</h3></div>
+            <div class="modal-body">
+                <form id="EventForm" class="well">
+                    <input type="hidden" id="eventID">
+                    @if (LoggedUserTp == "CompanyAdmin")
+                    {
+                        <div class="row">
+                            <div class="col-md-3">To</div>
+                            <div class="col-md-9">
+                                @Html.DropDownListFor(model => model.Userid, aslUsercos, new {id = "eventUserID", @class = "form-control"})
+                                @*<input class="form-control" type="text" id="eventTitle" placeholder="Title here" style="width: 100%">*@
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <input type="hidden" id="eventUserID">
+                    }
+                    <div class="row">
+                        <div class="col-md-3">Title</div>
+                        <div class="col-md-9">
+                            <input class="form-control" type="text" id="eventTitle" placeholder="Title here" style="width: 100%">
+                            @*<label id="eventTitle" placeholder="Title here" readonly="readonly" style="width: 100%"></label>*@
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">Text</div>
+                        <div class="col-md-9">
+                            <input class="form-control" type="text" id="eventText" placeholder="Text here" style="width: 100%">
+                            @*<label id="eventTitle" placeholder="Title here" readonly="readonly" style="width: 100%"></label>*@
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">Start Date</div>
+                        <div class="col-md-5"><input class="form-control" type="text" id="eventStartDate" style="width: 100%"></div>
+                        <div class="col-md-4">
+                            <div class="input-group clockpicker" data-align="top" data-autoclose="true">
+                                <input class="form-control" id="eventStartTime" style="width: 100%" Value="00:01">
+                                @*@Html.TextBoxFor(model => model.TIMEFR, htmlAttributes: new { @class = "form-control", @Value = "00:01" })*@
+                                <span class="input-group-addon">
+                                    <span class="glyphicon glyphicon-time"></span>
+                                </span>
+                            </div>
+                        </div>
+
+                        @*<label id="eventTitle" placeholder="Title here" readonly="readonly" style="width: 100%"></label>*@
+
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">End Date</div>
+                        <div class="col-md-5"><input class="form-control" type="text" id="eventEndDate" style="width: 100%"></div>
+                        <div class="col-md-4">
+                            <div class="input-group clockpicker" data-align="top" data-autoclose="true">
+                                <input class="form-control" id="eventEndTime" style="width: 100%" Value="23:59">
+                                @*@Html.TextBoxFor(model => model.TIMEFR, htmlAttributes: new { @class = "form-control", @Value = "00:01" })*@
+                                <span class="input-group-addon">
+                                    <span class="glyphicon glyphicon-time"></span>
+                                </span>
+                            </div>
+                        </div>
+                        @*<label id="eventTitle" placeholder="Title here" readonly="readonly" style="width: 100%"></label>*@
+
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">Status</div>
+                        <div class="col-md-4">
+                            <select id="eventStatus" class="form-control">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                                <option value="Completed">Completed</option>
+                            </select>
+                            @*<label id="eventTitle" placeholder="Title here" readonly="readonly" style="width: 100%"></label>*@
+                        </div>
+                    </div>
+                    <br />
+                    <div class="row">
+                        <div class="col-md-4">
+                            <button type="button" id="btnPopupCancel" data-dismiss="modal" class="btn btn-danger">Cancel</button>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" id="btnPopupSave" data-dismiss="modal" class="btn btn-primary">Save event</button>
+                            <button type="button" id="btnPopupUpdate" data-dismiss="modal" class="btn btn-primary">Update event</button>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" id="btnPopupDelete" data-dismiss="modal" class="btn btn-primary">Delete event</button>
+                        </div>
+                    </div>
+
+                    @*<input type="hidden" id="eventID">
+                        <label>Title</label>
+                        <input id="eventTitle" placeholder="Title here" readonly="readonly"><br />
+                        <label>Check In date</label>
+                        <input readonly="readonly" id="checkInDate"><br />
+                        <label>Check Out date</label>
+                        <input readonly="readonly" id="checkOutDate"><br />*@
+                    @*<label>Appointment length (minutes)</label>
+                        <input type="text" id="eventDuration" placeholder="15"><br />*@
+                </form>
+            </div>
+            @*<div class="modal-footer">
+                    <button type="button" id="btnPopupCancel" data-dismiss="modal" class="btn">Cancel</button>
+                    <button type="button" id="btnPopupSave" data-dismiss="modal" class="btn btn-primary">Save event</button>
+                </div>*@
+        </div>
+    </div>
+
+
+}
+
+
+@{
+
+    //datatime picker script
+    <script type="text/javascript">
+        $('.clockpicker').clockpicker();
+    </script>
+
+    <script>
+
+
+        $(document).ready(function () {
+
+
+            $("#eventStartDate").datepicker({ dateFormat: 'dd/mm/yy', changeYear: true });
+            $("#eventEndDate").datepicker({ dateFormat: 'dd/mm/yy', changeYear: true });
+
+
+            var sourceFullView = { url: '/SchedulerCalendar/GetDiaryEvents/' };
+            var sourceSummaryView = { url: '/SchedulerCalendar/GetDiarySummary/' };
+            var CalLoading = true;
+
+            $('#calendar').fullCalendar({
+                header: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'month,agendaWeek,agendaDay,listWeek'
+                },
+                defaultView: 'month',
+                editable: true,
+                allDaySlot: false,
+                selectable: true,
+                slotMinutes: 15,
+                events: '/SchedulerCalendar/GetDiaryEvents/',
+
+
+                eventClick: function (calEvent, jsEvent, view) {
+                    //alert('You clicked on event id: ' + calEvent.id
+                    //    + "\nSpecial ID: " + calEvent.someKey
+                    //    + "\nAnd the title is: " + calEvent.title);
+                    $('#eventID').val(calEvent.id);
+                    $('#eventTitle').val(calEvent.title);
+                    $('#eventText').val(calEvent.text);
+                    $('#eventStartDate').val(calEvent.startDate);
+                    //$('#eventStartDate').val($.fullCalendar.formatDate(calEvent.startDate, 'dd/MM/yyyy'));
+                    $('#eventStartTime').val(calEvent.startTime);
+                    $('#eventEndDate').val(calEvent.endDate);
+                    //$('#eventEndDate').val($.fullCalendar.formatDate(calEvent.endDate, 'dd/MM/yyyy'));
+                    $('#eventEndTime').val(calEvent.endTime);
+                    $('#eventStatus').val(calEvent.status);
+                    ShowEventPopupForGetInfo(calEvent);
+
+                },
+
+                eventDrop: function (event, dayDelta, minuteDelta, allDay, revertFunc) {
+                    if (confirm("Confirm move?")) {
+                        UpdateEvent(event.id, event.start, event.end);
+                        $('#calendar').fullCalendar('refetchEvents');
+                    }
+                    else {
+                        revertFunc();
+                    }
+                },
+
+                eventResize: function (event, dayDelta, minuteDelta, revertFunc) {
+
+                    if (confirm("Confirm change appointment length?")) {
+                        UpdateEvent(event.id, event.start, event.end);
+                        $('#calendar').fullCalendar('refetchEvents');
+                    }
+                    else {
+                        revertFunc();
+                    }
+                },
+
+
+
+                dayClick: function (date, allDay, jsEvent, view) {
+                    $('#eventTitle').val("");
+                    $('#eventText').val("");
+                    $('#eventStartDate').val($.fullCalendar.formatDate(date, 'dd/MM/yyyy'));
+                    $('#eventEndDate').val($.fullCalendar.formatDate(date, 'dd/MM/yyyy'));
+                    ShowEventPopup(date);
+
+                },
+
+                viewRender: function (view, element) {
+
+                    if (!CalLoading) {
+                        if (view.name == 'month') {
+                            $.ajax({
+                                type: 'GET',
+                                url: "/SchedulerCalendar/GetDiaryEvents",
+                            });
+
+                            //$('#calendar').fullCalendar('removeEventSource', sourceFullView);
+                            //$('#calendar').fullCalendar('removeEvents');
+                            //$('#calendar').fullCalendar('addEventSource', sourceSummaryView);
+                        }
+                        else {
+                            $.ajax({
+                                type: 'GET',
+                                url: "/SchedulerCalendar/GetDiarySummary",
+                            });
+                            //$('#calendar').fullCalendar('removeEventSource', sourceSummaryView);
+                            //$('#calendar').fullCalendar('removeEvents');
+                            //$('#calendar').fullCalendar('addEventSource', sourceFullView);
+                        }
+                    }
+                },
+
+
+
+            });
+
+            CalLoading = false;
+
+
+        });
+
+        //$('#btnInit').click(function () {
+        //    $.ajax({
+        //        type: 'POST',
+        //        url: "/SchedulerCalendar/Init",
+        //        success: function (response) {
+        //            if (response == 'True') {
+        //                $('#calendar').fullCalendar('refetchEvents');
+        //                alert('Database populated! ');
+        //            }
+        //            else {
+        //                alert('Error, could not populate database!');
+        //            }
+        //        }
+        //    });
+        //});
+
+        $('#btnPopupCancel').click(function () {
+            ClearPopupFormValues();
+            $('#popupEventForm').hide();
+        });
+
+
+        $('#btnPopupSave').click(function () {
+            $('#popupEventForm').hide();
+            var dataRow = {
+                'userid': $('#eventUserID').val(),
+                'Title': $('#eventTitle').val(),
+                //'NewEventDate': $('#eventDate').val(),
+                //'NewEventTime': $('#eventTime').val(),
+                //'NewEventDuration': $('#eventDuration').val()
+                'Text': $('#eventText').val(),
+                'status': $('#eventStatus').val(),
+                'startDate': $('#eventStartDate').val(),
+                'startTime': $('#eventStartTime').val(),
+                'endDate': $('#eventEndDate').val(),
+                'endTime': $('#eventEndTime').val()
+            }
+
+            ClearPopupFormValues();
+            $.ajax({
+                type: 'POST',
+                url: "/SchedulerCalendar/SaveEvent",
+                data: dataRow,
+                success: function (response) {
+                    if (response == 'True') {
+                        $('#calendar').fullCalendar('refetchEvents');
+                        alert('New event saved!');
+                    }
+                    else {
+                        alert('Error, could not save event!');
+                    }
+                }
+            });
+        });
+
+
+
+        $('#btnPopupUpdate').click(function () {
+            $('#popupEventForm').hide();
+            var dataRow = {
+                'id': $('#eventID').val(),
+                'Title': $('#eventTitle').val(),
+                'Text': $('#eventText').val(),
+                'status': $('#eventStatus').val(),
+                'startDate': $('#eventStartDate').val(),
+                'startTime': $('#eventStartTime').val(),
+                'endDate': $('#eventEndDate').val(),
+                'endTime': $('#eventEndTime').val()
+
+            }
+
+            ClearPopupFormValues();
+            $.ajax({
+                type: 'POST',
+                url: "/SchedulerCalendar/Update",
+                data: dataRow,
+                success: function (response) {
+                    if (response == 'True') {
+                        $('#calendar').fullCalendar('refetchEvents');
+                        alert('event updated!');
+                    }
+                    else {
+                        alert('Error, could not update event!');
+                    }
+                }
+            });
+        });
+
+
+        
+        $('#btnPopupDelete').click(function () {
+            $('#popupEventForm').hide();
+            var dataRow = {
+                'id': $('#eventID').val(),
+                'Title': $('#eventTitle').val(),
+                'Text': $('#eventText').val(),
+                'status': $('#eventStatus').val(),
+                'startDate': $('#eventStartDate').val(),
+                'startTime': $('#eventStartTime').val(),
+                'endDate': $('#eventEndDate').val(),
+                'endTime': $('#eventEndTime').val()
+
+            }
+
+            ClearPopupFormValues();
+            $.ajax({
+                type: 'POST',
+                url: "/SchedulerCalendar/Delete",
+                data: dataRow,
+                success: function (response) {
+                    if (response == 'True') {
+                        $('#calendar').fullCalendar('refetchEvents');
+                        alert('event deleted!');
+                    }
+                    else {
+                        alert('Error, could not delete event!');
+                    }
+                }
+            });
+        });
+
+
+
+
+        function ShowEventPopupForGetInfo() {
+            $('#popupEventForm').show();
+            $('#btnPopupSave').hide();
+            $('#btnPopupUpdate').show();
+            $('#btnPopupDelete').show();
+            $('#eventTitle').focus();
+        }
+
+
+        function ShowEventPopup(date) {
+            ClearPopupFormValues();
+            $('#popupEventForm').show();
+            $('#btnPopupSave').show();
+            $('#btnPopupUpdate').hide();
+            $('#btnPopupDelete').hide();
+            $('#eventTitle').focus();
+        }
+
+        function ClearPopupFormValues() {
+            $('#eventID').val("");
+            $('#eventTitle').val("");
+            //$('#eventDateTime').val("");
+            //$('#eventDuration').val("");
+            $('#eventText').val("");
+        }
+
+        function UpdateEvent(EventID, EventStart, EventEnd) {
+
+            var dataRow = {
+                'ID': EventID,
+                'NewEventStart': EventStart,
+                'NewEventEnd': EventEnd
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: "/SchedulerCalendar/UpdateEvent",
+                dataType: "json",
+                contentType: "application/json",
+                data: JSON.stringify(dataRow)
+            });
+
+            $('#calendar').fullCalendar('refetchEvents');
+        }
+
+    </script>
+
+
+}
+
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+
+<script src="~/Content/fullcalendar/Script/bootstrap-modal.js"></script>
+<script src="~/Content/fullcalendar/Script/jquery.browser.min.js"></script>
+<script src="~/Content/fullcalendar/Script/jquery-ui-1.8.24.js"></script>
+@*<script src="~/Content/fullcalendar/Script/bootstrap.js"></script>*@
+<script src="~/Content/fullcalendar/Script/fullcalendar.js"></script>
+@*<script src="~/Content/fullcalendar/Script/jquery-1.8.2.js"></script>*@
+<script src="~/Content/fullcalendar/Script/modernizr-2.6.2.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

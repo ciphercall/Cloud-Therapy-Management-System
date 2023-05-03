@@ -1,0 +1,138 @@
+﻿@using AS_Therapy_GL.Models
+@model IEnumerable<AS_Therapy_GL.Models.UserReportViewModel>
+
+@{
+    ViewBag.Title = "GetUserLogPdfResult";
+    Layout = null;
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    var userID = Model.Select(z => z.USERID).Take(1).ToArray();
+    Int64 userId = Convert.ToInt64(userID[0]);
+
+    string companyName = "", userName = "";
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    var SelectUserName = from n in db.AslUsercoDbSet
+                         join a in db.AslCompanyDbSet on n.COMPID equals a.COMPID
+                         where n.USERID == userId
+                         select new { companyName = a.COMPNM, userName = n.USERNM };
+
+    foreach (var n in SelectUserName)
+    {
+        companyName = n.companyName;
+        userName = n.userName;
+    }
+
+    var compNm = companyName;
+    var userNm = userName;
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+}
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+    <script type="text/javascript">
+        function ClosePrint() {
+            var print = document.getElementById("print");
+            print.style.visibility = "hidden";
+            //            print.display = false;
+
+            window.print();
+        }
+    </script>
+
+</head>
+
+@*<input id="print" tabindex="1" type="button" value="Print" onclick="ClosePrint()" />*@
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="20%"></td>
+
+                </tr>
+                <tr style="background-color: #00689b">
+                    <td colspan="8">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                    </td>
+
+                    <td style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>
+
+                <tr>
+                    <td colspan="7" align="left" style="padding: 4px; font-weight: bold">User Log Data List</td>
+                    <td align="right" colspan="2" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="5" style="padding:4px">User Name: <span style="font-weight: bold">@userNm</span></td>
+
+                    <td colspan="1" align="right">From:</td>
+                    <td colspan="1" style="font-weight: bold">@ViewBag.FromDate</td>
+                    <td colspan="1" align="right">To:</td>
+                    <td colspan="1" style="font-weight: bold">@ViewBag.ToDate</td>
+
+                </tr>
+
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="2" style="color: white; padding: 4px">Log Type</td>
+                    <td colspan="2" style="color: white; padding: 4px">Log Date-Time</td>
+                    <td colspan="5" style="color: white; padding: 4px">Log Data</td>
+
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td colspan="2" style="padding:4px">@Html.DisplayFor(modelItem => item.LOGTYPE)</td>
+                        <td colspan="2" style="padding: 4px">
+                            @Html.DisplayFor(modelItem => item.LOGDATE)
+                            @Html.DisplayFor(modelItem => item.LOGTIME)
+                        </td>
+                        <td colspan="5" style="padding: 4px">@Html.DisplayFor(modelItem => item.LOGDATA)</td>
+
+                    </tr>
+                }
+
+            </tbody>
+        </table>
+
+    </div>
+</body>
+</html>

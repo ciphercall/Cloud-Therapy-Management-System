@@ -1,0 +1,714 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+@{
+    ViewBag.Title = "Create";
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Int64 compid = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+
+    List<SelectListItem> listtype = new List<SelectListItem>();
+    listtype.Add(new SelectListItem
+    {
+        Text = "RECEIPT",
+        Value = "MREC"
+    });
+    listtype.Add(new SelectListItem
+    {
+        Text = "PAYMENT",
+        Value = "MPAY"
+    });
+    listtype.Add(new SelectListItem
+    {
+        Text = "JOURNAL",
+        Value = "JOUR"
+    });
+    listtype.Add(new SelectListItem
+    {
+        Text = "CONTRA",
+        Value = "CONT"
+    });
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+
+
+    //List<SelectListItem> listTransFor = new List<SelectListItem>();
+
+    //listTransFor.Add(new SelectListItem
+    //{
+    //    Text = "OFFICIAL",
+    //    Value = "OFFICIAL"
+    //});
+    //listTransFor.Add(new SelectListItem
+    //{
+    //    Text = "COSTPOOL",
+    //    Value = "COSTPOOL"
+    //});
+
+    List<SelectListItem> listTransMode = new List<SelectListItem>();
+
+    listTransMode.Add(new SelectListItem
+    {
+        Text = "CASH",
+        Value = "CASH"
+    });
+    listTransMode.Add(new SelectListItem
+    {
+        Text = "A/C PAYEE CHEQUE",
+        Value = "A/C PAYEE CHEQUE"
+    });
+
+    listTransMode.Add(new SelectListItem
+    {
+        Text = "CASH CHEQUE",
+        Value = "CASH CHEQUE"
+    });
+    listTransMode.Add(new SelectListItem
+    {
+        Text = "EFT",
+        Value = "EFT"
+    });
+
+
+   
+
+
+}
+
+<link href="~/Content/bootstrap-datepicker-css/datepicker.css" rel="stylesheet" />
+<link href="~/Content/bootstrap-datepicker-css/datepicker3.css" rel="stylesheet" />
+
+<script src="~/Scripts/bootstrap-datepicker.js"></script>
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.AGlStrans.COMPID, new { @Value = compid })
+    @Html.HiddenFor(model => model.AGlStrans.Gl_StransID, new { id = "HiddentxtGlPId" })
+
+    <div id="contentHeaderBox">
+        @if (TempData["TransactionUpdate"] != null)
+        {
+
+            <h1 style="padding-left:16px">
+                Voucher Update&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                @TempData["TransactionUpdate"]
+            </h1>
+
+        }
+        else
+        {
+            <h1 style="padding-left:16px">
+                Voucher Update
+            </h1>
+        }
+
+        @if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A")
+        {
+            var createStatus = "";
+            var updateStatus = "";
+            var deleteStatus = "";
+            var status = "";
+            var loggedUserID = HttpContext.Current.Session["loggedUserID"].ToString();
+            System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+
+            string query1 = string.Format("SELECT STATUS, INSERTR, UPDATER, DELETER FROM ASL_ROLE WHERE  CONTROLLERNAME='Transaction' AND COMPID='{0}' AND USERID = '{1}'", compid, loggedUserID);
+
+            System.Data.SqlClient.SqlCommand cmd1 = new System.Data.SqlClient.SqlCommand(query1, conn);
+            conn.Open();
+
+            SqlDataAdapter da1 = new SqlDataAdapter(cmd1);
+            DataTable ds1 = new DataTable();
+            da1.Fill(ds1);
+
+            foreach (DataRow row in ds1.Rows)
+            {
+                status = row["STATUS"].ToString();
+                createStatus = row["INSERTR"].ToString();
+                updateStatus = row["UPDATER"].ToString();
+                deleteStatus = row["DELETER"].ToString();
+            }
+            conn.Close();
+
+            if (updateStatus == "A")
+            {
+
+            }
+            else if (createStatus == "A")
+            {
+                Response.Redirect("~/Transaction/Create");
+            }
+            else if (deleteStatus == "A")
+            {
+                Response.Redirect("~/Transaction/Delete");
+            }
+
+            if (updateStatus == "I")
+            {
+                Response.Redirect("~/GraphView/Index");
+            }
+
+            <div class="btn-group pull-right" id="editOption">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                    <i class="fa fa-cog"></i>
+                </button>
+                <ul class="dropdown-menu pull-right" style="" role="menu">
+                    @if (createStatus == 'A'.ToString() && updateStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "Transaction")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Update", "Transaction")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Delete", "Transaction")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (updateStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Update", "Transaction")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Delete", "Transaction")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString() && updateStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "Transaction")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Update", "Transaction")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "Transaction")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Delete", "Transaction")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "Transaction")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                    }
+                    else if (updateStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Update", "Transaction")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                    }
+                    else if (deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Delete", "Transaction")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+        }
+
+    </div>
+    <br />
+    <div class="col-md-12">
+        @*@if (TempData["TransactionUpdate"] != null)
+            {
+                <div class="panel-heading text-center">
+                    <h4 style="color: #226699">@TempData["TransactionUpdate"]</h4>
+                </div>
+            }*@
+        <div class="form-group">
+
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("Transaction Type", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    @Html.DropDownListFor(model => model.AGlStrans.TRANSTP, listtype, "--Select--", htmlAttributes: new { id = "txtTransTp", @class = "form-control", autofocus = true })
+                    @if (TempData["Transaction_TransactionType"] != null)
+                    {
+                        <h6 style="color: #C03523">@TempData["Transaction_TransactionType"]</h6>
+                    }
+                    @*@Html.ValidationMessageFor(model => model.TRANSDT, "", new { @class = "text-danger" })*@
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("Transaction Date", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-2">
+                    @Html.TextBoxFor(model => model.AGlStrans.TRANSDT, htmlAttributes: new { id = "idTransDT", @class = "form-control", required = "required" })
+                    @*@Html.ValidationMessageFor(model => model.AGlStrans.TRANSDT, "", new { @class = "text-danger" })*@
+                </div>
+                <div class="col-md-1">
+                    @Html.Label("Month", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-2">
+                    @Html.TextBoxFor(model => model.AGlStrans.TRANSMY, htmlAttributes: new { id = "idTransMonth", @class = "form-control", @readonly = "readonly" })
+
+                </div>
+                <div class="col-md-1">
+                    @Html.Label("Invoice", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-2">
+                    @Html.DropDownListFor(model => model.AGlStrans.TRANSNO, new SelectList(string.Empty, "Value", "Text"), "- Select -", htmlAttributes: new { id = "idTransNO", @class = "form-control" })
+
+                </div>
+            </div>
+            <div>
+                <hr />
+            </div>
+            <br />
+
+            @Html.HiddenFor(model => model.AGlStrans.TRANSFOR, htmlAttributes: new { id = "idTransFor", @class = "form-control" })
+            @Html.HiddenFor(model => model.AGlStrans.COSTPID, htmlAttributes: new { id = "idCostPID", @class = "form-control" })
+
+
+
+
+            @*<div class="row">
+                    <div class="col-md-3">
+                        @Html.Label("Transaction For", htmlAttributes: new { @class = "control-label" })
+                    </div>
+
+                    <div class="col-md-2">
+                        @Html.DropDownListFor(model => model.AGlStrans.TRANSFOR, listTransFor, "-Select--", htmlAttributes: new { id = "idTransFor", @class = "form-control" })
+
+                    </div>
+                    <div class="col-md-1">
+                        @Html.Label("Cost Pool", htmlAttributes: new { @class = "control-label" })
+                    </div>
+
+                    <div class="col-md-5">
+                        @Html.DropDownListFor(model => model.AGlStrans.COSTPID, listcostpname, "--Select--", htmlAttributes: new { id = "idCostPID", @class = "form-control" })
+
+                    </div>
+                </div>
+                <br />*@
+
+
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("Transaction Mode", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @Html.DropDownListFor(model => model.AGlStrans.TRANSMODE, listTransMode, "--Select--", htmlAttributes: new { id = "txtTransMode", @class = "form-control" })
+                    @*@Html.ValidationMessageFor(model => model.TRANSFOR, "", new { @class = "text-danger" })*@
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.AGlStrans.DEBITCD, htmlAttributes: new { id = "txtDebitCD", @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @Html.DropDownListFor(model => model.AGlStrans.DEBITCD, new SelectList(string.Empty, "Value", "Text"), "--Select--", htmlAttributes: new { id = "iddebitcd", @class = "form-control" })
+                    @*@Html.ValidationMessageFor(model => model.JOBNO, "", new { @class = "text-danger" })*@
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.AGlStrans.CREDITCD, htmlAttributes: new { id = "txtCreditCD", @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    @Html.DropDownListFor(model => model.AGlStrans.CREDITCD, new SelectList(string.Empty, "Value", "Text"), "--Select--", htmlAttributes: new { id = "idcreditcd", @class = "form-control" })
+                    @*@Html.ValidationMessageFor(model => model.JOBYY, "", new { @class = "text-danger" })*@
+                </div>
+            </div>
+            <br />
+            <div class="row" id="cheque">
+                <div class="col-md-3">
+                    @Html.Label("Cheque No", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.AGlStrans.CHEQUENO, htmlAttributes: new { id = "txtchequeno", @class = "form-control" })
+                    @*@Html.ValidationMessageFor(model => model.JOBTP, "", new { @class = "text-danger" })*@
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("Cheque Date", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.AGlStrans.CHEQUEDT, htmlAttributes: new { id = "txtchequedate", @class = "form-control" })
+                    @*@Html.ValidationMessageFor(model => model.JOBTP, "", new { @class = "text-danger" })*@
+                </div>
+            </div>
+            <br />
+
+
+            <div class="row">
+
+                <div class="col-md-3">
+                    @Html.Label("Amount", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.AGlStrans.AMOUNT, htmlAttributes: new { id = "idamount", @class = "form-control", required = "required" })
+                    @*@Html.ValidationMessageFor(model => model.AGlStrans.AMOUNT, "", new { @class = "text-danger" })*@
+                </div>
+
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("Remarks", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.AGlStrans.REMARKS, htmlAttributes: new { id = "idremarks", @class = "form-control" })
+                </div>
+                <br />
+            </div>
+            <br />
+
+
+            @Html.HiddenFor(model => model.AGlStrans.INSTIME, new { id = "HiddentxtInstime" })
+            @Html.HiddenFor(model => model.AGlStrans.INSIPNO, new { id = "HiddentxtInsipno" })
+            @Html.HiddenFor(model => model.AGlStrans.INSLTUDE, new { id = "HiddentxtInsltude" })
+            @Html.HiddenFor(model => model.AGlStrans.INSUSERID, new { id = "HiddentxtInsuserId" })
+
+
+            @Html.TextBoxFor(model => model.AGlStrans.UPDLTUDE, new { id = "latlon", style = "display: none;" })
+            <input id="lat" type="hidden" />
+            <input id="lon" type="hidden" />
+
+            <br />
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-3">
+                    <input type="submit" class="btn btn-primary btn-block" value="Update" name="command" />
+                </div>
+                <div class="col-md-3">
+                    <input type="submit" class="btn btn-primary btn-block" id="createp" value="Update & Print" name="command" formtarget="_blank" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+    <script language="javascript" type="text/javascript">
+        $(function () {
+            navigator.geolocation.getCurrentPosition(showPosition);
+
+            function showPosition(position) {
+                var coordinates = position.coords;
+                $("#lat").val(coordinates.latitude);
+                $("#lon").val(coordinates.longitude);
+
+                $("#latlon").val(
+                    $("#lat").val() + "," + $("#lon").val()
+                );
+            }
+            //function positionError(position) {
+            //    alert("!!! Error: "+position.code);
+            //}
+        });
+    </script>
+
+
+
+
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+
+            $('#txtchequedate').datepicker({
+                dateFormat: "dd-M-yy"
+                //format: "yyyy-M-dd"
+            });
+
+
+            $('#cheque').hide();
+
+            $('#createp').click(function () {
+                setTimeout(function () { window.location.reload(); }, 100);
+            });
+
+
+
+            $('#txtTransTp').change(function () {
+
+                $('#idTransDT').datepicker({
+                    dateFormat: "dd-M-yy",
+
+                    onSelect: function (datetxt, instance) {
+
+                        //alert(datetxt);
+                        var txtTransNo = document.getElementById('idTransNO');
+                        var changedtxt = $('#txtTransTp').val();
+                        $("#idTransNO").val(" ");
+
+
+                        $.ajax
+                        ({
+                            url: '@Url.Action("Invoiceload", "Transaction")',
+                            type: 'post',
+                            dataType: "json",
+                            data: { theDate: datetxt, type: changedtxt },
+                            success: function (data) {
+                                $("#idTransNO").empty();
+                                $("#idTransNO").append('<option value="'
+                                    + "select" + '">'
+                                    + "select" + '</option>');
+
+
+                                $.each(data, function (i, memo) {
+
+                                    $("#idTransNO").append('<option value="'
+                                        + memo.Value + '">'
+                                        + memo.Text + '</option>');
+
+                                });
+                                var txttransYear = document.getElementById('idTransMonth');
+                                var changedtxt = $('#idTransDT').val();
+                                $.getJSON(
+                                    "/Transaction/DateChanged_getMonth", { "Changedtxt": changedtxt },
+                                    function (myData) {
+                                        txttransYear.value = myData.month;
+
+                                    });
+
+                            }
+                        });
+
+                        if (changedtxt == "MREC") {
+                            $('#txtDebitCD').text('Received To');
+                            $('#txtCreditCD').text('Received From');
+                        }
+                        else if (changedtxt == "MPAY") {
+                            $('#txtDebitCD').text('Paid To');
+                            $('#txtCreditCD').text('Paid From');
+                        }
+                        else if (changedtxt == "JOUR") {
+                            $('#txtDebitCD').text('Debited To');
+                            $('#txtCreditCD').text('Credited To');
+                        }
+                        else if (changedtxt == "CONT") {
+                            $('#txtDebitCD').text('Deposited To');
+                            $('#txtCreditCD').text('Withdrawl From');
+                        }
+                    }
+                });
+            });
+
+
+            $('#idTransNO').change(function () {
+
+                var changedtxt = $('#idTransNO').val();
+                var type = $('#txtTransTp').val();
+                //  var Tdate = $('#idTransDT').val();
+                //   var changeddate = $('#idTransDT').val();
+                var txtprimarykey = document.getElementById('HiddentxtGlPId');
+                //var txttransDate = document.getElementById('idTransDT');
+                //var txttransType = document.getElementById('txtTransTp');
+                var txttransFor = document.getElementById('idTransFor');
+                var txtcostPID = document.getElementById('idCostPID');
+                var txttransMode = document.getElementById('txtTransMode');
+                var txtdebitCD = document.getElementById('iddebitcd');
+                var txtcreditCD = document.getElementById('idcreditcd');
+                var txtChequeNo = document.getElementById('txtchequeno');
+                var txtChequeDate = document.getElementById('txtchequedate');
+                var txtamount = document.getElementById('idamount');
+                var txtremarks = document.getElementById('idremarks');
+                
+                var txtInseruserId = document.getElementById('HiddentxtInsuserId');
+                var txtInsertime = document.getElementById('HiddentxtInstime');
+                var txtinslutude = document.getElementById('HiddentxtInsltude');
+                var txtinseripno = document.getElementById('HiddentxtInsipno');
+                //, "ChangedDate": changeddate, "ChangedType": changedtype
+                $.getJSON(
+                    "/Transaction/Update_SelectTransNo", { "Changedtxt": changedtxt, "Type": type },
+                    function (myData) {
+                        txtprimarykey.value = myData.keyid;
+                        //txttransDate.value = myData.Date;
+                        //txttransType.value = myData.Year;
+                        txttransFor.value = myData.For;
+                        txtcostPID.value = myData.costpool;
+                        txttransMode.value = myData.mode;
+                        txtdebitCD.value = myData.debit;
+                        txtcreditCD.value = myData.credit;
+                        txtChequeNo.value = myData.cheque;
+                        txtChequeDate.value = myData.ChequeDate;
+                        txtamount.value = myData.amount;
+                        txtremarks.value = myData.remarks;
+                        
+                        txtInseruserId.value = myData.INSUSERID;
+                        txtInsertime.value = myData.INSTIME;
+                        txtinslutude.value = myData.INSLTUDE;
+                        txtinseripno.value = myData.INSIPNO;
+
+                        if (txttransMode.value == "A/C PAYEE CHEQUE" || txttransMode.value == "CASH CHEQUE") {
+                            $('#cheque').show();
+
+                        }
+                        else {
+                            $('#cheque').hide();
+                        }
+
+
+                        $('#txtTransTp').attr('readonly', true);
+                        $('#idTransNO').attr('readonly', true);
+                        $('#idTransDT').attr('readonly', true);
+
+                        $("#iddebitcd").empty();
+                        $("#iddebitcd").append('<option value="'
+                            + myData.debitCD + '">'
+                            + myData.firstdebittext + '</option>');
+
+
+                        $.each(myData.debit, function (i, memo) {
+
+                            $("#iddebitcd").append('<option value="'
+                                + memo.Value + '">'
+                                + memo.Text + '</option>');
+
+                        });
+
+                        $("#idcreditcd").empty();
+                        $("#idcreditcd").append('<option value="'
+                            + myData.creditCD + '">'
+                            + myData.firstcredittext + '</option>');
+                        $.each(myData.credit, function (i, memo) {
+
+                            $("#idcreditcd").append('<option value="'
+                                + memo.Value + '">'
+                                + memo.Text + '</option>');
+
+                        });
+
+                    });
+
+
+
+
+                $('#iddebitcd').change(function () {
+
+                    var debitvalue = $('#iddebitcd').val();
+                    $.ajax
+                  ({
+                      url: '@Url.Action("CreditloadAfterDebitselect", "Transaction")',
+                      type: 'post',
+                      dataType: "json",
+                      data: { type: type, dvalue: debitvalue },
+                      success: function (data1) {
+
+                          $("#idcreditcd").empty();
+
+
+                          $("#idcreditcd").append('<option value="'
+                              + '">'
+                             + "--Select--" + '</option>');
+
+                          $.each(data1, function (i, memo1) {
+
+                              $("#idcreditcd").append('<option value="'
+                                  + memo1.Value + '">'
+                                  + memo1.Text + '</option>');
+
+                          });
+                      }
+                  });
+
+
+                });
+
+                //$("#txtTransNo").val(" ");
+                //$("#idTransDT").val(" ");
+                //$("#txtTransTp").val(" ");
+                $("#idTransFor").val(" ");
+                $("#idCostPID").val(" ");
+                $("#txtTransMode").val(" ");
+                $("#iddebitcd").val(" ");
+                $("#idcreditcd").val(" ");
+                $("#txtchequeno").val(" ");
+                $("#txtchequedate").val(" ");
+
+            });
+
+
+
+
+
+
+            $('#txtTransMode').change(function () {
+
+                var changedtxt = $('#txtTransMode').val();
+                if (changedtxt == "A/C PAYEE CHEQUE" || changedtxt == "CASH CHEQUE") {
+                    $('#cheque').show();
+
+                }
+                else {
+                    $('#cheque').hide();
+
+                }
+            });
+
+
+
+
+        });
+    </script>
+
+
+
+
+
+
+
+}
+
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+
+
+
+@*@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}*@

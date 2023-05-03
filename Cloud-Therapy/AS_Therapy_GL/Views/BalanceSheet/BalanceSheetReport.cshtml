@@ -1,0 +1,551 @@
+﻿@using AS_Therapy_GL.DataAccess
+@using AS_Therapy_GL.Models
+@using iTextSharp.text
+@model AS_Therapy_GL.Models.PageModel
+
+
+
+@{
+    Layout = null;
+
+    var LoggedCompId = Model.AGlMaster.COMPID;
+
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+
+    string companyName = "", address = "", contactNo = "";
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    var SelectCompanyName = from n in db.AslCompanyDbSet
+
+                            where n.COMPID == compid
+                            select new { n.COMPNM, n.ADDRESS, n.CONTACTNO };
+
+    foreach (var n in SelectCompanyName)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+
+    // var fromdate = Model.FromDate;
+    var todate = Model.ToDate;
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+    decimal sumdebit = 0, sumcredit = 0, result = 0, totalAsset = 0, totalLiability = 0;
+
+
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+</head>
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="10%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+
+                </tr>
+
+                <tr style="background-color: #00689b">
+                    <td colspan="12">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<span>  @contactno</span></p>
+                    </td>
+
+                    <td colspan="6" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>
+                <tr>
+                    <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Balance Sheet</td>
+                    <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+
+                <tr style="outline: thin solid">
+
+                    @{
+                        string d2 = Convert.ToString(todate);
+                        DateTime fdate2 = DateTime.Parse(d2);
+                        string ffdt2 = fdate2.ToString("dd-MMM-yyyy");
+                    }
+
+                    <td colspan="12" style="font-weight: bold;padding:4px">
+                        As On : <span style="font-weight:bold">@ffdt2</span>
+                    </td>
+                </tr>
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="12" style="color: white; padding: 4px; font-size: small" align="center">Head Particulars</td>
+                    <td colspan="6" style="color: white; padding: 4px; font-size: small" align="center">Amount</td>
+                </tr>
+            </thead>
+
+            <tbody>
+                @{
+                    var debitcdfind = (from n in db.GlMasterDbSet where n.COMPID == compid && n.TRANSDT <= todate select new { n.DEBITCD }).Distinct().ToList();
+
+                    var findaccountname = (from m in db.GlAcchartDbSet where m.COMPID == compid select new { m.ACCOUNTCD, m.ACCOUNTNM }).ToList();
+
+                    string status = "NO";
+
+                    var tabledata = (from a in db.GlMasterDbSet where a.COMPID == compid && a.TRANSDT <= todate select a).ToList();
+                    var accountname = "";
+                    string subdebit = "";
+                    Int64 i = 0, j = 0;
+                }
+
+
+
+
+                <tr style="outline: thin solid">
+                    <td style="font-weight:bold">ASSET</td>
+                </tr>
+                @foreach (var item in debitcdfind)
+                {
+                    subdebit = item.DEBITCD.ToString().Substring(3, 1);
+                    if (subdebit == "1")
+                    {
+                        status = "NO";
+                        foreach (var x in findaccountname)
+                        {
+
+
+                            if (x.ACCOUNTCD == item.DEBITCD)
+                            {
+
+
+                                accountname = x.ACCOUNTNM;
+
+                                status = "YES";
+
+
+                                break;
+                            }
+                        }
+                        if (status == "YES")
+                        {
+                            if (i == 0)
+                            {
+                                <tr style="outline: thin solid">
+                                    <td colspan="12" style="padding-left: 20px">@accountname</td>
+                                    @{
+                                sumdebit = 0;
+                                sumcredit = 0;
+                                    }
+
+                                    @foreach (var x1 in tabledata)
+                                    {
+                                        if (x1.DEBITCD == item.DEBITCD)
+                                        {
+                                            //var aa = Convert.ToString(item.DEBITCD).Substring(3, 1);
+                                            //var tt = Convert.ToInt64(aa);
+                                            sumdebit = Convert.ToDecimal(sumdebit + x1.DEBITAMT);
+                                            sumcredit = Convert.ToDecimal(sumcredit + x1.CREDITAMT);
+
+                                        }
+                                    }
+                                    @{
+
+
+                                    result = sumdebit - sumcredit;
+                                    decimal rr = 0;
+                                    string resultamt = "";
+                                    Int64 st2 = 0;
+
+                                    if (result < 0)
+                                    {
+                                        rr = result * (-1);
+                                        st2 = 1;
+                                        string convertamount2 = Convert.ToString(rr);
+                                        resultamt = CommainAmount.AmountwithComma(convertamount2);
+                                    }
+                                    else
+                                    {
+                                        st2 = 0;
+                                        string convertamount2 = Convert.ToString(result);
+                                        resultamt = CommainAmount.AmountwithComma(convertamount2);
+
+                                    }
+
+
+
+                                    totalAsset = Convert.ToDecimal(totalAsset + result);
+
+
+                                    }
+                                    @if (st2 == 1)
+                                    {
+                                        <td colspan="6" align="right">-@resultamt</td>
+                                    }
+                                    else
+                                    {
+                                        <td colspan="6" align="right">@resultamt</td>
+                                    }
+
+
+
+
+                                </tr>
+                                    i = 1;
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="12" style="padding-left: 20px">@accountname</td>
+                                    @{
+                                sumdebit = 0;
+                                sumcredit = 0;
+                                    }
+
+                                    @foreach (var x1 in tabledata)
+                                    {
+                                        if (x1.DEBITCD == item.DEBITCD)
+                                        {
+                                            //var aa = Convert.ToString(item.DEBITCD).Substring(3, 1);
+                                            //var tt = Convert.ToInt64(aa);
+
+                                            sumdebit = Convert.ToDecimal(sumdebit + x1.DEBITAMT);
+                                            sumcredit = Convert.ToDecimal(sumcredit + x1.CREDITAMT);
+
+
+
+
+
+
+                                        }
+                                    }
+                                    @{
+
+
+                                    result = sumdebit - sumcredit;
+                                    decimal rr = 0;
+                                    string resultamt = "";
+                                    Int64 st1 = 0;
+                                    if (result < 0)
+                                    {
+                                        rr = result * (-1);
+                                        st1 = 1;
+                                        string convertamount2 = Convert.ToString(rr);
+                                        resultamt = CommainAmount.AmountwithComma(convertamount2);
+                                    }
+                                    else
+                                    {
+                                        st1 = 0;
+                                        string convertamount2 = Convert.ToString(result);
+                                        resultamt = CommainAmount.AmountwithComma(convertamount2);
+
+                                    }
+
+                                    totalAsset = Convert.ToDecimal(totalAsset + result);
+
+
+                                    }
+
+                                    @if (st1 == 1)
+                                    {
+                                        <td colspan="6" align="right">-@resultamt</td>
+                                    }
+                                    else
+                                    {
+                                        <td colspan="6" align="right">@resultamt</td>
+                                    }
+
+
+
+                                </tr>
+                                    i = 0;
+                            }
+
+                        }
+                    }
+
+
+
+
+
+                }
+
+                @{
+                    decimal amt = 0, st = 0;
+                    if (totalAsset < 0)
+                    {
+                        amt = totalAsset * (-1);
+                        st = 1;
+                    }
+                    else
+                    {
+                        amt = totalAsset;
+                        st = 0;
+                    }
+                    string convertamount = Convert.ToString(amt);
+
+                    string tAsset = CommainAmount.AmountwithComma(convertamount);
+
+                }
+
+                <tr style=" outline: thin solid">
+                    <td colspan="12" style="font-weight: bold;padding-left: 20px">Total ASSET : </td>
+                    @if (st == 0)
+                    {
+                        <td colspan="6" style="font-weight: bold" align="right">@tAsset</td>
+                    }
+                    else
+                    {
+                        <td colspan="6" style="font-weight: bold" align="right">-@tAsset</td>
+                    }
+
+                </tr>
+
+
+                <tr>
+                    <td style="font-weight:bold">LIABILITY</td>
+                </tr>
+
+                @foreach (var item in debitcdfind)
+                {
+                    subdebit = item.DEBITCD.ToString().Substring(3, 1);
+                    if (subdebit == "2")
+                    {
+                        status = "NO";
+                        foreach (var x in findaccountname)
+                        {
+
+
+                            if (x.ACCOUNTCD == item.DEBITCD)
+                            {
+
+
+                                accountname = x.ACCOUNTNM;
+
+                                status = "YES";
+
+
+                                break;
+                            }
+                        }
+                        if (status == "YES")
+                        {
+                            if (j == 0)
+                            {
+                                <tr style="outline: thin solid">
+                                    <td colspan="12" style="padding-left: 20px">@accountname</td>
+                                    @{
+                                sumdebit = 0;
+                                sumcredit = 0;
+                                    }
+
+                                    @foreach (var x1 in tabledata)
+                                    {
+                                        if (x1.DEBITCD == item.DEBITCD)
+                                        {
+                                            //var aa = Convert.ToString(item.DEBITCD).Substring(3, 1);
+                                            //var tt = Convert.ToInt64(aa);
+
+                                            sumdebit = Convert.ToDecimal(sumdebit + x1.DEBITAMT);
+                                            sumcredit = Convert.ToDecimal(sumcredit + x1.CREDITAMT);
+
+
+
+
+
+
+                                        }
+                                    }
+                                    @{
+
+
+                                    result = sumcredit - sumdebit;
+                                    decimal rr = 0;
+                                    string resultamt = "";
+                                    Int64 st5 = 0;
+                                    if (result < 0)
+                                    {
+                                        rr = result * (-1);
+                                        st5 = 1;
+                                        string convertamount2 = Convert.ToString(rr);
+                                        resultamt = CommainAmount.AmountwithComma(convertamount2);
+                                    }
+                                    else
+                                    {
+                                        st5 = 0;
+                                        string convertamount2 = Convert.ToString(result);
+                                        resultamt = CommainAmount.AmountwithComma(convertamount2);
+
+                                    }
+
+
+                                    totalLiability = Convert.ToDecimal(totalLiability + result);
+
+
+                                    }
+                                    @if (st5 == 1)
+                                    {
+                                        <td colspan="6" align="right">-@resultamt</td>
+                                    }
+                                    else
+                                    {
+                                        <td colspan="6" align="right">@resultamt</td>
+                                    }
+
+
+
+
+
+                                </tr>
+                                    j = 1;
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="12" style="padding-left: 20px">@accountname</td>
+                                    @{
+                                sumdebit = 0;
+                                sumcredit = 0;
+                                    }
+
+                                    @foreach (var x1 in tabledata)
+                                    {
+                                        if (x1.DEBITCD == item.DEBITCD)
+                                        {
+                                            //var aa = Convert.ToString(item.DEBITCD).Substring(3, 1);
+                                            //var tt = Convert.ToInt64(aa);
+
+                                            sumdebit = Convert.ToDecimal(sumdebit + x1.DEBITAMT);
+                                            sumcredit = Convert.ToDecimal(sumcredit + x1.CREDITAMT);
+
+
+
+
+
+
+                                        }
+                                    }
+                                    @{
+
+
+                                    result = sumcredit - sumdebit;
+                                    decimal rr = 0;
+                                    string resultamt = "";
+                                    Int64 st6 = 0;
+                                    if (result < 0)
+                                    {
+                                        rr = result * (-1);
+                                        st6 = 1;
+                                        string convertamount2 = Convert.ToString(rr);
+                                        resultamt = CommainAmount.AmountwithComma(convertamount2);
+                                    }
+                                    else
+                                    {
+                                        st6 = 0;
+                                        string convertamount2 = Convert.ToString(result);
+                                        resultamt = CommainAmount.AmountwithComma(convertamount2);
+
+                                    }
+
+
+                                    totalLiability = Convert.ToDecimal(totalLiability + result);
+
+
+                                    }
+
+                                    @if (st6 == 1)
+                                    {
+                                        <td colspan="6" align="right">-@resultamt</td>
+                                    }
+                                    else
+                                    {
+                                        <td colspan="6" align="right">@resultamt</td>
+                                    }
+
+
+
+
+                                </tr>
+                                    j = 0;
+                            }
+
+                        }
+                    }
+
+
+
+
+
+                }
+
+                @{
+                    decimal amt1 = 0, st4 = 0;
+                    string tLiability = "";
+                    if (totalLiability < 0)
+                    {
+                        amt1 = totalLiability * (-1);
+                        st4 = 1;
+                    }
+                    else
+                    {
+                        amt1 = totalLiability;
+                        st4 = 0;
+                    }
+                    string convertamount1 = Convert.ToString(amt1);
+                    if (convertamount1 == "0")
+                    {
+                        tLiability = "0";
+                    }
+                    else
+                    {
+                        tLiability = CommainAmount.AmountwithComma(convertamount1);
+                    }
+
+                }
+
+                <tr style=" outline: thin solid">
+                    <td colspan="12" style="font-weight: bold;padding-left: 20px">Total LIABILITY : </td>
+                    @if (st4 == 0)
+                    {
+                        <td colspan="6" style="font-weight: bold" align="right">@tLiability</td>
+                    }
+                    else
+                    {
+                        <td colspan="6" style="font-weight: bold" align="right">-@tLiability</td>
+                    }
+
+
+                </tr>
+
+
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

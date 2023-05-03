@@ -1,0 +1,242 @@
+﻿@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+
+@{
+    ViewBag.Title = "GetBuyReturn_Reports_BigSize";
+    Layout = null;
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+
+    var companyId = Convert.ToInt64(Model.pst_Trans.COMPID);
+    var MemoNo = Convert.ToInt64(Model.pst_Trans.TRANSNO);
+    var TransYear = Convert.ToInt64(Model.Pst_Transmst.TRANSYY);
+    var TransType = Model.Pst_Transmst.TRANSTP.ToString();
+    var PartyName = "";
+
+    string companyName = "";
+    var SelectUserName = from n in db.AslCompanyDbSet where n.COMPID == companyId select new { companyName = n.COMPNM };
+    foreach (var n in SelectUserName)
+    {
+        companyName = n.companyName;
+    }
+    var compNm = companyName;
+
+
+
+
+    Decimal discountAmount = 0, totalAmount = 0, TotalNet = 0, CashAmount = 0, CreditAmount = 0;
+    Int64 PartyNameID = 0;
+    var StkTransMstfound = from n in db.PST_TransMstDbSet
+                           where n.COMPID == companyId && n.TRANSNO == MemoNo && n.TRANSYY == TransYear && n.TRANSTP == TransType
+                           select new { n.RSID, n.TOTAMT, n.DISCOUNT, n.TOTNET, n.AMTCASH, n.AMTCREDIT };
+
+    foreach (var a in StkTransMstfound)
+    {
+        PartyNameID = Convert.ToInt64(a.RSID);
+        totalAmount = Convert.ToDecimal(a.TOTAMT);
+        discountAmount = Convert.ToDecimal(a.DISCOUNT);
+        TotalNet = Convert.ToDecimal(a.TOTNET);
+        CashAmount = Convert.ToDecimal(a.AMTCASH);
+        CreditAmount = Convert.ToDecimal(a.AMTCREDIT);
+    }
+
+
+
+    var findStoreID = from m in db.GlAcchartDbSet where m.ACCOUNTCD == PartyNameID && m.COMPID == companyId select new { m.ACCOUNTNM };
+    foreach (var v in findStoreID)
+    {
+        PartyName = v.ACCOUNTNM.ToString();
+    }
+
+
+
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+    Decimal totalGross = 0;
+
+
+    var StkTransList = (from StkTrans in db.PST_TransDbSet
+                        join StkItem in db.PST_ItemDbSet on StkTrans.ITEMID equals StkItem.ITEMID
+                        where StkTrans.COMPID == StkItem.COMPID && StkTrans.COMPID == companyId && StkTrans.TRANSYY == TransYear && StkTrans.TRANSNO == MemoNo
+                        && StkTrans.TRANSTP == TransType
+                        orderby StkTrans.ITEMSL
+                        select new
+                        {
+                            StkTrans.TRANSDT,
+                            StkTrans.TRANSNO,
+                            StkItem.ITEMNM,
+                            StkItem.ITEMID,
+                            StkTrans.QTY,
+                            StkTrans.RATE,
+                            StkTrans.AMOUNT
+                        }).ToList();
+}
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+</head>
+
+
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="20%"></td>
+
+                </tr>
+
+                <tr style="background-color: #00689b">
+                    <td colspan="7">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                    </td>
+                    <td colspan="2" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>
+
+                <tr>
+                    <td colspan="7" align="left" style="padding: 4px; font-weight: bold">Buy Return Memo</td>
+                    <td align="right" colspan="2" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+
+                <tr style="outline: thin solid">
+                    <td colspan="1" align="right">Date:</td>
+                    <td colspan="1" style="font-weight: bold">@ViewBag.Date</td>
+                    <td colspan="1" align="right">Invoice:</td>
+                    <td colspan="1" style="font-weight: bold">@ViewBag.InvoiceNo</td>
+                    <td colspan="5" style="padding:4px"> <span style="font-weight: bold"></span></td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="1" align="right">Supplier:</td>
+                    <td colspan="4" style="font-weight: bold">@PartyName</td>
+                    <td colspan="4" style="padding:4px"> <span style="font-weight: bold"></span></td>
+                </tr>
+
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="4" style="color: white; padding: 4px">Item Name</td>
+                    <td colspan="1" style="color: white; padding: 4px">Qty</td>
+                    <td colspan="2" style="color: white; padding: 4px">Rate</td>
+                    <td colspan="2" style="color: white; padding: 4px">Amount</td>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var item in StkTransList)
+                {
+                    <tr>
+                        <td colspan="4" style="padding:4px">
+                            @Html.DisplayFor(modelItem => item.ITEMNM)
+                        </td>
+                        <td colspan="1" style="padding:4px">
+                            @Html.DisplayFor(modelItem => item.QTY)
+                        </td>
+                        <td colspan="2" align="center" style="padding:4px">
+                            @Html.DisplayFor(modelItem => item.RATE)
+                        </td>
+                        <td colspan="2" align="right" style="padding:4px">
+                            @Html.DisplayFor(modelItem => item.AMOUNT)
+                        </td>
+                    </tr>
+                    totalGross = totalGross + Convert.ToDecimal(item.AMOUNT);
+                }
+
+
+                <tr>
+
+                    <td align="right" colspan="8"><strong>Total:</strong></td>
+                    <td align="right" colspan="1" style="font-weight:bold">
+                        @totalGross
+                    </td>
+                </tr>
+                <tr>
+
+                    <td align="right" colspan="8"><strong>Discount:</strong></td>
+                    <td align="right" colspan="1" style="font-weight:bold">
+                        @discountAmount
+                    </td>
+                </tr>
+                <tr>
+
+                    <td align="right" colspan="8"><strong>Total Amount:</strong></td>
+                    <td align="right" colspan="1" style="font-weight:bold">
+                        @TotalNet
+                    </td>
+                </tr>
+                <tr>
+
+                    <td align="right" colspan="8"><strong>Cash Amount:</strong></td>
+                    <td align="right" colspan="1" style="font-weight:bold">
+                        @CashAmount
+                    </td>
+                </tr>
+                <tr>
+
+                    <td align="right" colspan="8"><strong>Credit Amount:</strong></td>
+                    <td align="right" colspan="1" style="font-weight:bold">
+                        @CreditAmount
+                    </td>
+                </tr>
+
+                @{
+                    string amount = "", InWords = "";
+                    amount = Convert.ToString(CashAmount);
+                    InWords = SpellAmount.MoneyConvFn(amount);
+                }
+                <tr>
+                    <td></td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="9" align="left" style="padding-left:8px">In Words : <strong>@InWords</strong></td>
+                </tr>
+
+                <tr>
+                    <td align="center" colspan="9"><strong>THANK YOU</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
+

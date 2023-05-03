@@ -1,0 +1,178 @@
+﻿@using AS_Therapy_GL.Models
+@model IEnumerable<AS_Therapy_GL.Models.ASL_ROLE>
+
+
+
+@{
+    ViewBag.Title = "Index";
+    
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+
+    if (LoggedUserTp == "AslSuperadmin" && LoggedUserStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+}
+
+
+@if (Model != null)
+{
+    <div class="panel panel-primary">
+        <div class="panel-heading">User Role Information</div>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <tr>
+                    @*<th>
+                            @Html.DisplayNameFor(model => model.COMPID)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.USERID)
+                        </th>*@
+                    <th>
+                        Module Name
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.MENUNAME)
+                    </th>
+                    @*<th>
+                            @Html.DisplayNameFor(model => model.MODULEID)
+                        </th>*@
+                    <th>
+                        @Html.DisplayNameFor(model => model.MENUTP)
+                    </th>
+                    @*<th>
+                            @Html.DisplayNameFor(model => model.MENUID)
+                        </th>*@
+                    <th>
+                        @Html.DisplayNameFor(model => model.STATUS)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.INSERTR)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.UPDATER)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.DELETER)
+                    </th>
+                    @*<th>
+                            @Html.DisplayNameFor(model => model.ACTIONNAME)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.CONTROLLERNAME)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.USERPC)
+                        </th>*@
+                    @*<th>
+                        @Html.DisplayNameFor(model => model.INSUSERID)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.INSTIME)
+                    </th>*@
+                    @*<th>
+                            @Html.DisplayNameFor(model => model.INSIPNO)
+                        </th>*@
+                    @*<th>
+                        @Html.DisplayNameFor(model => model.UPDUSERID)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.UPDTIME)
+                    </th>*@
+                    @*<th>
+                            @Html.DisplayNameFor(model => model.UPDIPNO)
+                        </th>*@
+                </tr>
+
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        @*<td>
+                                @Html.DisplayFor(modelItem => item.COMPID)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.USERID)
+                            </td>*@
+                        @{
+                    string ModuleName = "";
+                    var FindModuleName = from m in db.AslMenumstDbSet where m.MODULEID == item.MODULEID select new { m.MODULENM };
+                    foreach (var x in FindModuleName)
+                    {
+                        ModuleName = x.MODULENM;
+                    }
+
+                        }
+                        <td>
+                            @ModuleName
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.MENUNAME)
+                        </td>
+                        @*<td>
+                                @Html.DisplayFor(modelItem => item.MODULEID)
+                            </td>*@
+                        <td>
+                            @Html.DisplayFor(modelItem => item.MENUTP)
+                        </td>
+                        @*<td>
+                                @Html.DisplayFor(modelItem => item.MENUID)
+                            </td>*@
+                        <td>
+                            @Html.DisplayFor(modelItem => item.STATUS)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.INSERTR)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.UPDATER)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.DELETER)
+                        </td>
+
+                        @*<td>
+                                @Html.DisplayFor(modelItem => item.ACTIONNAME)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.CONTROLLERNAME)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.USERPC)
+                            </td>*@
+                        @*<td>
+                            @Html.DisplayFor(modelItem => item.INSUSERID)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.INSTIME)
+                        </td>*@
+                        @*<td>
+                                @Html.DisplayFor(modelItem => item.INSIPNO)
+                            </td>*@
+                        @*<td>
+                            @Html.DisplayFor(modelItem => item.UPDUSERID)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.UPDTIME)
+                        </td>*@
+                        @*<td>
+                                @Html.DisplayFor(modelItem => item.UPDIPNO)
+                            </td>*@
+                    </tr>
+                }
+
+            </table>
+        </div>
+    </div>
+}

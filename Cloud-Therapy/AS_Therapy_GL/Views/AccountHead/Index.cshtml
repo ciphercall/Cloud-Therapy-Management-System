@@ -1,0 +1,387 @@
+﻿@using System.Web.UI.WebControls
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.AccountHeadModel
+
+@{
+    ViewBag.Title = "Index";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    var LoggedCompId = HttpContext.Current.Session["loggedCompID"].ToString();
+
+    //var remarksID = TempData["CategoryRemarks"];
+    List<SelectListItem> listType = new List<SelectListItem>();
+    listType.Add(new SelectListItem { Text = "ASSET", Value = "1" });
+    listType.Add(new SelectListItem { Text = "LIABILITY", Value = "2" });
+    listType.Add(new SelectListItem { Text = "INCOME", Value = "3" });
+    listType.Add(new SelectListItem { Text = "EXPENDITURE", Value = "4" });
+
+
+
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+}
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.GLACCHARMSTModel.COMPID, new { id = "txtCompId", @Value = LoggedCompId })
+    @Html.HiddenFor(model => model.GLACCHARMSTModel.HEADCD, new { id = "txtHeadId", @Value = TempData["HeadCD"] })
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Account Head Information</h1>
+    </div>
+    <br />
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+
+                <div class="col-md-3">
+                    <span>@Html.LabelFor(model => model.HEADTP, htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.DropDownListFor(model => model.HEADTP, listType, "--Select--", htmlAttributes: new { id = "HeadTypeID", @class = "form-control input-sm", autofocus = true })
+                    @Html.ValidationMessageFor(model => model.HEADTP, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="col-md-6">
+                    <span>@Html.LabelFor(model => model.HEADNM, htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.TextBoxFor(model => model.HEADNM, new { @class = "form-control input-sm", id = "txtHeadName" })
+                    @Html.ValidationMessageFor(model => model.HEADNM, "", new { @class = "text-danger" })
+                </div>
+                @*<div class="col-md-1"></div>*@
+
+
+
+                <div class="col-md-1">
+                    <span><br /></span>
+                    <input id="SubmitId" type="submit" class="btn btn-info" value="Submit" name="command" />
+                </div>
+                <div class="col-md-2">
+                    <span><br /></span>
+                    <input id="UpdateId" type="submit" class="btn btn-info" value="Update Head" name="command" />
+                </div>
+
+            </div>
+        </div>
+        @if (TempData["message"] != null)
+        {
+            <div class="text-center">
+                <h6 style="color: #BD7F1C">@TempData["message"] </h6>
+            </div>
+            <br />
+        }
+        @Html.TextBoxFor(model => model.GLACCHARMSTModel.INSLTUDE, new { id = "latlonPos", style = "display: none;" })
+        <input id="lat" type="hidden" />
+        <input id="lon" type="hidden" />
+        <div>
+            <hr />
+        </div>
+
+    </div>
+    <div class="col-md-12">
+        <div class="row">
+            @if (TempData["HeadCD"] != null)
+            {
+
+
+                @Html.HiddenFor(model => model.AcchartModel.COMPID, new { style = "width:3em;", @readonly = "readonly" })
+                @Html.HiddenFor(model => model.AcchartModel.HEADCD, new { style = "width:3em;", @readonly = "readonly" })
+                @Html.HiddenFor(model => model.AcchartModel.ACCOUNTCD, new { style = "width:3em;", @readonly = "readonly" })
+
+                <div class="col-md-3">
+                    <span> <b>@Html.Label("name", "Account Name", htmlAttributes: new { @class = "control-label" })</b></span>
+
+                </div>
+                <div class="col-md-6">
+                    @Html.TextBoxFor(model => model.AcchartModel.ACCOUNTNM, new { @class = "form-control input-sm", id = "txtAccountNm" })
+                    @if (ViewBag.errorItemid != null)
+                    {
+                        <h6 style="color: #C03523">@ViewBag.errorItemid<i style="color: #C03523" class="fa fa-question-circle fa-1x"></i></h6>
+                    }
+                </div>
+                @*<div class="col-md-2"></div>*@
+                if (TempData["ShowAddButton"] == null)
+                {
+                    <div class="col-md-2">
+                        <input type="submit" class="btn btn-info" value="Update" id="btnUpdate" name="command" style="margin-top: 0px; margin-left: 5px" />
+                    </div>
+                }
+
+                else
+                {
+                    <div class="col-md-2">
+                        <input type="submit" class="btn btn-info" value="Add" id="btnAdd" name="command" style="margin-top: 0px; margin-left: 5px" />
+                    </div>
+                }
+                <div class="col-md-1"></div>
+            }
+
+        </div>
+
+        <br />
+        <div class="row">
+
+            @if (TempData["HeadCD"] != null)
+            {
+
+                var HeadCode = Convert.ToInt64(TempData["HeadCD"]);
+                var HeadType = Convert.ToInt64(TempData["HeadTP"]);
+                Int64 LogCompId = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"]);
+                var res = db.GlAcchartDbSet.Where(d => d.HEADCD == HeadCode && d.COMPID == LogCompId && d.HEADTP == HeadType);
+
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <tr>
+                            <td>
+                                <h6>Account Name</h6>
+                            </td>
+
+                            @*<td>
+                                    <h6>Remarks</h6>
+                                </td>*@
+                            <td></td>
+                            <td></td>
+                        </tr>
+
+                        @foreach (var item in res)
+                        {
+                            <tr>
+                                @Html.HiddenFor(model => item.COMPID, new { style = "width:3em;", @readonly = "readonly" })
+                                @Html.HiddenFor(model => item.HEADCD, new { style = "width:3em;", @readonly = "readonly" })
+                                @Html.HiddenFor(model => item.ACCOUNTCD, new { style = "width:3em;", @readonly = "readonly" })
+                                @Html.HiddenFor(model => item.ACCHARTId, new { style = "width:3em;", @readonly = "readonly" })
+                                @Html.HiddenFor(model => item.HEADTP, new { style = "width:3em;", @readonly = "readonly" })
+
+
+                                <td>
+                                    @Html.DisplayFor(model => item.ACCOUNTNM, new { style = "width:10em;", id = "txtAccountNm", @readonly = "readonly" })
+                                </td>
+
+                                @*<td>
+                                        @Html.DisplayFor(model => item.REMARKS, new { style = "width: 7em;", id = "txtRemarks", @readonly = "readonly" })
+                                    </td>*@
+
+                                <td>
+                                    <span>
+                                        <a href="@Url.Action("EditAccountUpdate", new { id = item.ACCHARTId, cid = item.COMPID,headtype=item.HEADTP, Headid = item.HEADCD, itemId = item.ACCOUNTCD, itemName = item.ACCOUNTNM })" class="btn btn-sm btn-info">
+                                            <span class="glyphicon glyphicon-pencil"></span>
+                                        </a>
+                                    </span>
+
+
+                                </td>
+                                <td>
+                                    <span>
+                                        <a href="@Url.Action("AccountDelete", new { id = item.ACCHARTId, cid = item.COMPID, headtype = item.HEADTP, Headid = item.HEADCD, itemId = item.ACCOUNTCD, itemName = item.ACCOUNTNM })" class="btn btn-sm btn-danger">
+                                            <span class="glyphicon glyphicon-remove"></span>
+                                        </a>
+                                    </span>
+
+                                </td>
+
+                            </tr>
+
+                        }
+
+                    </table>
+                </div>
+
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped"></table>
+                </div>
+            }
+        </div>
+    </div>
+
+
+
+
+
+            //Latitute & longitude
+            <script src="http://maps.google.com/maps/api/js?sensor=false">
+            </script>
+
+            <script language="javascript" type="text/javascript">
+                $(function () {
+                    navigator.geolocation.getCurrentPosition(showPosition);
+                    //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+                    function showPosition(position) {
+                        var coordinates = position.coords;
+                        $("#lat").val(coordinates.latitude);
+                        $("#lon").val(coordinates.longitude);
+
+                        $("#latlonPos").val(
+                            $("#lat").val() + "," + $("#lon").val()
+                        );
+                        $("#latlonRms").val(
+                            $("#lat").val() + "," + $("#lon").val()
+                        );
+                    }
+                });
+            </script>
+
+
+
+
+
+
+            <script type="text/javascript">
+
+                $(document).ready(function () {
+                    $('#txtHeadName').autocomplete(
+                        {
+                            source: function (request, response) {
+                                $.ajax({
+                                    url: '@Url.Action("TagSearch", "AccountHead")',
+                                    dataType: "json",
+                                    data: {
+                                        term: request.term,
+                                        changedDropDown: $('#HeadTypeID option:selected').val()
+                                    },
+                                    success: function (data) {
+                                        //response(data);
+                                        response($.map(data, function (item) {
+                                            return {
+                                                label: item,
+                                                value: item
+                                            };
+                                        }));
+                                    }
+                                });
+
+                            },
+
+                            change: $('#txtHeadName').keyup(_.debounce(txtOneChanged, 500)),
+
+                            //change: $('#txtHeadName').keyup(function (e) {
+                            //    $('#txtHeadName').keyup(_.debounce(txtOneChanged(e.keyCode), 1000));
+                            //}),
+                            select: function (event, ui) {
+                                $("#txtHeadName").val(ui.item.label);
+                                txtOneChanged();
+                                //var changedtxt = ui.item.value;
+                                //document.getElementById("txtHeadName").focus();
+                            },
+                        });
+
+
+
+                    function txtOneChanged() {
+
+                        var changedText = $("#txtHeadName").val();
+                        var headTypeText = $("#HeadTypeID").val();
+                        var txtBox = document.getElementById('txtHeadName');
+                        var txtBox1 = document.getElementById('txtHeadId');
+                        var remarkstxtbox = document.getElementById('txtRemarks');
+
+
+                        if (changedText != "") {
+                            $.getJSON(
+                                '/AccountHead/ItemNameChanged', { "ChangedText": changedText, "HeadTypeText": headTypeText },
+                                function (result) {
+                                    txtBox.value = result.HeadName;
+                                    txtBox1.value = result.headid;
+                                    remarkstxtbox.value = result.rmrks;
+                                    document.getElementById("txtHeadName").focus();
+                                });
+                        }
+                    }
+
+
+
+
+                    $('#HeadTypeID').change(function () {
+                        $("#txtHeadName").val("");
+                        $("#txtHeadId").val("");
+                        $("#txtRemarks").val("");
+                    });
+
+                });
+
+
+
+            </script>
+
+
+
+            <style type="text/css">
+                .ui-autocomplete {
+                    position: absolute;
+                    cursor: default;
+                    background: #f0ffff;
+                    max-height: 200px;
+                    overflow-y: auto;
+                    /* prevent horizontal scrollbar */
+                    overflow-x: hidden;
+                    /* add padding to account for vertical scrollbar */
+                    padding-right: 20px;
+                }
+
+
+                /*html .ui-autocomplete {
+                                    width: 1px;
+                                }
+
+                                .ui-menu {
+                                    list-style: none;
+                                    padding: 2px;
+                                    margin: 0;
+                                    display: block;
+                                    float: left;
+                                }
+
+                                    .ui-menu .ui-menu {
+                                        margin-top: -3px;
+                                    }
+
+                                    .ui-menu .ui-menu-item {
+                                        margin: 0;
+                                        padding: 0;
+                                        zoom: 1;
+                                        float: left;
+                                        clear: left;
+                                        width: 100%;
+                                    }
+
+                                        .ui-menu .ui-menu-item a {
+                                            text-decoration: none;
+                                            display: block;
+                                            padding: .2em .4em;
+                                            line-height: 1.5;
+                                            zoom: 1;
+                                        }
+
+                                            .ui-menu .ui-menu-item a.ui-state-hover,
+                                            .ui-menu .ui-menu-item a.ui-state-active {
+                                                font-weight: normal;
+                                                margin: -1px;
+                                            }*/
+            </style>
+}
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+<script src="~/Scripts/Underscore.js"></script>

@@ -1,0 +1,180 @@
+﻿@using AS_Therapy_GL.Models
+@using AS_Therapy_GL.Models.DTO
+@model AS_Therapy_GL.Models.ASL.ASL_PCalendarImage
+
+@{
+    ViewBag.Title = "Index";
+
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+
+    if (LoggedUserTp == "AslSuperadmin" && LoggedUserStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+
+    List<SelectListItem> listOfYear = new List<SelectListItem>();
+    listOfYear.Add(new SelectListItem { Text = "2017", Value = "2017" });
+    listOfYear.Add(new SelectListItem { Text = "2018", Value = "2018" });
+    listOfYear.Add(new SelectListItem { Text = "2019", Value = "2019" });
+    listOfYear.Add(new SelectListItem { Text = "2020", Value = "2020" });
+    listOfYear.Add(new SelectListItem { Text = "2021", Value = "2021" });
+    listOfYear.Add(new SelectListItem { Text = "2022", Value = "2022" });
+    listOfYear.Add(new SelectListItem { Text = "2023", Value = "2023" });
+    listOfYear.Add(new SelectListItem { Text = "2024", Value = "2024" });
+
+
+    List<SelectListItem> listOfMonth = new List<SelectListItem>();
+    listOfMonth.Add(new SelectListItem { Text = "January", Value = "01" });
+    listOfMonth.Add(new SelectListItem { Text = "February", Value = "02" });
+    listOfMonth.Add(new SelectListItem { Text = "March", Value = "03" });
+    listOfMonth.Add(new SelectListItem { Text = "April", Value = "04" });
+    listOfMonth.Add(new SelectListItem { Text = "May", Value = "05" });
+    listOfMonth.Add(new SelectListItem { Text = "June", Value = "06" });
+    listOfMonth.Add(new SelectListItem { Text = "July", Value = "07" });
+    listOfMonth.Add(new SelectListItem { Text = "August", Value = "08" });
+    listOfMonth.Add(new SelectListItem { Text = "September", Value = "09" });
+    listOfMonth.Add(new SelectListItem { Text = "October", Value = "10" });
+    listOfMonth.Add(new SelectListItem { Text = "November", Value = "11" });
+    listOfMonth.Add(new SelectListItem { Text = "December", Value = "12" });
+
+}
+
+
+@using (Html.BeginForm("Index", "PromotionalCalendarUpload", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+
+    <div id="contentHeaderBox">
+        <h1>Promotional Calendar Upload</h1>
+        @*<div class="btn-group pull-right" id="editOption">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                    <i class="fa fa-cog"></i>
+                </button>
+                <ul class="dropdown-menu pull-right" style="" role="menu">
+                    <li>
+                        <a href="@Url.Action("GroupView", "UploadGroup")"><i class="fa fa-file-text"></i> Contact Group</a>
+                        <a href="@Url.Action("EditContact", "UploadEdit")"><i class="fa fa-file-text"></i> Edit Contact</a>
+                    </li>
+                </ul>
+            </div>*@
+    </div>
+    <br />
+
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-12">
+                    <p>Please upload image file with specific format <strong>(NB: .jpg, .png)</strong></p>
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "Year: ", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.DropDownListFor(model => model.Year, listOfYear, new { @class = "form-control", id = "txtYear", autofocus = true })
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "Month: ", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.DropDownListFor(model => model.Month, listOfMonth, new { @class = "form-control", id = "txtMonth", autofocus = true })
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "Browse Image: ", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    <input type="file" id="image1" name="file" accept="image/*" @*accept="image/gif, image/jpeg, image/png"*@ />
+
+                </div>
+                <div class="col-md-2">
+                    <input type="submit" class="btn btn-primary" value="Process" style="float: right;" id="load" data-loading-text="Uploading...." />
+                </div>
+                @if (ViewBag.UploadMessage != null)
+                {
+                    <div class="col-md-4">
+                        <h4 style="color: #226699">@ViewBag.UploadMessage</h4>
+                    </div>
+
+                }
+            </div>
+
+            <br />
+            <div id="getCalendarInfo">
+                @Html.Partial("~/Views/PromotionalCalendarUpload/_CalendarImageInfo.cshtml")
+            </div>
+
+        </div>
+    </div>
+
+
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            var f1 = document.getElementById('image1');
+
+            f1.onchange = function (e) {
+                var ext = this.value.match(/\.(.+)$/)[1];
+                switch (ext) {
+                    case 'jpg':
+                    //case 'bmp':
+                    case 'png':
+                    //case 'tif':
+                        alert('allowed');
+                        break;
+                    default:
+                        alert('not allowed');
+                        this.value = '';
+                }
+            };
+
+
+            var txtyear = $('#txtYear').val();
+            $('#getCalendarInfo').load('@Url.Action("CalendarInfo")', { year: txtyear });
+
+            $('#txtYear').change(function () {
+                var txtyear = $('#txtYear').val();
+                $('#getCalendarInfo').load('@Url.Action("CalendarInfo")', { year: txtyear });
+            });
+
+            $('.btn').on('click', function () {
+                var $this = $(this);
+                $this.button('loading');
+                setTimeout(function () {
+                    $this.button('reset');
+                }, 8000);
+            });
+        });
+    </script>
+
+}
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+
+

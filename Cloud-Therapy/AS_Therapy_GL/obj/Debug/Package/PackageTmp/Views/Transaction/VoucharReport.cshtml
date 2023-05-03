@@ -1,0 +1,259 @@
+﻿@using System.Activities
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+@{
+    ViewBag.Title = "VoucharReport";
+    Layout = null;
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Int64 compid = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+    string companyName = "", address = "", contactNo = "";
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    var SelectUserName = from n in db.AslCompanyDbSet
+                         where n.COMPID == compid
+                         select new { n.COMPNM, n.ADDRESS, n.CONTACTNO };
+
+    foreach (var n in SelectUserName)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    string vouchar = Convert.ToString(Model.AGlStrans.TRANSTP);
+    string Vouchar = "", lebel1 = "", lebel2 = "";
+    var forREC = from n in db.GlAccharmstDbSet where n.COMPID == compid select n;
+
+    if (vouchar == "MREC")
+    {
+        string debitcd = Convert.ToString(Model.AGlStrans.DEBITCD).Substring(0, 6);
+        Int64 debit = Convert.ToInt64(debitcd);
+        foreach (var x in forREC)
+        {
+            if (x.HEADCD == debit)
+            {
+                Vouchar = "CREDIT VOUCHER" + "-" + x.HEADNM;
+                break;
+            }
+        }
+        lebel1 = "Received To ";
+        lebel2 = "Received From ";
+    }
+    else if (vouchar == "MPAY")
+    {
+        string creditcd = Convert.ToString(Model.AGlStrans.CREDITCD).Substring(0, 6);
+        Int64 credit = Convert.ToInt64(creditcd);
+        foreach (var x in forREC)
+        {
+            if (x.HEADCD == credit)
+            {
+                Vouchar = "DEBIT VOUCHER" + "-" + x.HEADNM;
+                break;
+            }
+        }
+        lebel1 = "Paid To ";
+        lebel2 = "Paid From ";
+    }
+    else if (vouchar == "JOUR")
+    {
+        Vouchar = "JOURNAL Vouchar";
+        lebel1 = "Debited To ";
+        lebel2 = "Credited From ";
+    }
+    else
+    {
+        Vouchar = "CONTRA Vouchar";
+        lebel1 = "Deposited To ";
+        lebel2 = "Withdrawl From ";
+    }
+
+
+    var InvoiceNo = Model.AGlStrans.TRANSNO;
+    var date = Model.AGlStrans.TRANSDT;
+
+    var dd = Model.AGlStrans.DEBITCD;
+    var cc = Model.AGlStrans.CREDITCD;
+    string dds = "", ccs = "";
+    var forddcc = from n in db.GlAcchartDbSet where n.COMPID == compid select n;
+    foreach (var x in forddcc)
+    {
+        if (x.ACCOUNTCD == dd)
+        {
+            dds = x.ACCOUNTNM;
+        }
+        if (x.ACCOUNTCD == cc)
+        {
+            ccs = x.ACCOUNTNM;
+        }
+    }
+
+    string amount = "", InWords = "";
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+    Decimal totalGross = 0;
+
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table border="0" width="100%">
+            <tr style="background-color: #00689b">
+                <td colspan="6">
+                    <h3 style="color: white" align="center">@compNm</h3>
+                    <p style="color:white" align="center">@Address</p>
+                    <p style="color:white" align="center"> Phone: @contactno</p>
+                </td>
+            </tr>
+
+            <tr style="width:100%">
+                <td colspan="6">
+                    <h3 style="font-size: larger" align="center">
+                        @Vouchar
+                    </h3>
+                </td>
+            </tr>
+
+
+
+            <tr style="outline: thin solid">
+                <td align="left" colspan="3" style="padding-left:8px">Invoice : <span>@InvoiceNo</span> </td>
+                @{
+                    string a = Convert.ToString(date);
+                    DateTime invoicedate = DateTime.Parse(a);
+                    string InvDate = invoicedate.ToString("dd-MMM-yyyy");
+                }
+                <td align="right" colspan="3">Date : <span>@InvDate</span></td>
+
+
+            </tr>
+            <tr style="outline: thin solid">
+                <td colspan="1" style="padding-left:8px">@lebel1 </td>
+                <td colspan="5">: @dds </td>
+            </tr>
+            <tr style="outline: thin solid">
+                <td colspan="1" style="padding-left:8px">@lebel2 </td>
+                <td colspan="5">: @ccs </td>
+            </tr>
+            <tr style="background-color: #00689b; outline: thin solid">
+                <td style="color: white" align="center" colspan="3">Particulars</td>
+                <td style="color: white" align="center" colspan="3">Amount</td>
+            </tr>
+
+            <tr>
+                <td colspan="3" style="padding-left:8px">
+                    @Model.AGlStrans.REMARKS
+                </td>
+                <td colspan="3" align="right">
+                    @Model.AGlStrans.AMOUNT
+                </td>
+            </tr>
+
+
+
+            <tr>
+                <td colspan="3" align="right"><strong>Total:</strong></td>
+                <td colspan="3" align="right"><strong>@Model.AGlStrans.AMOUNT</strong></td>
+            </tr>
+
+
+
+            @if (vouchar == "JOUR")
+            {
+
+            }
+            else
+            {
+                <tr>
+                    <td colspan="1" align="left" style="padding-left:8px">Mode of Payment </td>
+                    <td colspan="5" align="left">: @Model.AGlStrans.TRANSMODE</td>
+                </tr>
+                <tr>
+                    <td colspan="1" align="left" style="padding-left:8px">Cheque No </td>
+                    <td colspan="1" align="left">: @Model.AGlStrans.CHEQUENO</td>
+
+                    <td colspan="1" align="left">Cheque Date : </td>
+                    @{
+                string d = Convert.ToString(Model.AGlStrans.CHEQUEDT);
+
+
+                    }
+                    @if (d == "")
+                    {
+                        <td colspan="1" align="left"></td>
+
+                    }
+                    else
+                    {
+                        DateTime fdate = DateTime.Parse(d);
+                        string ffdt = fdate.ToString("dd-MMM-yyyy");
+                        <td colspan="1" align="left">@ffdt</td>
+                    }
+                </tr>
+
+            }
+
+            @{
+                amount = Convert.ToString(Model.AGlStrans.AMOUNT);
+                InWords = SpellAmount.MoneyConvFn(amount);
+            }
+
+            <tr style="outline: thin solid">
+                <td colspan="6" align="left" style="padding-left:8px">In Words : <span>@InWords</span></td>
+            </tr>
+
+            <tr style="height: 35px">
+                <td></td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td>Received By</td>
+                <td>Prepared By</td>
+                <td></td>
+                <td>Checked By</td>
+                <td>Authorised By</td>
+            </tr>
+            <tr style="background-color: #00689b">
+                <td colspan="3" style="color: white;padding:8px" align="left">
+                    Powered By Alchemy Software
+                </td>
+                <td align="right" colspan="3" style="color: white; padding: 8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

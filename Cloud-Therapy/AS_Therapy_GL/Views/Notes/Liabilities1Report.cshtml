@@ -1,0 +1,527 @@
+﻿@using AS_Therapy_GL.DataAccess
+@using AS_Therapy_GL.Models
+@using iTextSharp.text
+@model AS_Therapy_GL.Models.PageModel
+
+@{
+    Layout = null;
+
+    var LoggedCompId = Model.AGlMaster.COMPID;
+
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+
+    string companyName = "", address = "", contactNo = "";
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    var SelectCompanyName = from n in db.AslCompanyDbSet
+
+                            where n.COMPID == compid
+                            select new { n.COMPNM, n.ADDRESS, n.CONTACTNO };
+
+    foreach (var n in SelectCompanyName)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    var headtype = Model.AGL_acchart.HEADTP;
+    var fromdate = Model.FromDate;
+    var todate = Model.ToDate;
+
+    string type = "";
+    if (headtype == 1)
+    {
+        type = "ASSET";
+    }
+    else if (headtype == 2)
+    {
+        type = "LIABILITY";
+    }
+    else if (headtype == 3)
+    {
+        type = "INCOME";
+    }
+    else
+    {
+        type = "EXPENDITURE";
+    }
+    var HeadType = type;
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+    decimal sumdebit = 0, sumcredit = 0, result = 0, subtotal_Result = 0, totalsum = 0;
+    string totalSum = "";
+
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+</head>
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="10%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+
+                </tr>
+
+                <tr style="background-color: #00689b">
+                    <td colspan="12">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<span>  @contactno</span></p>
+                    </td>
+
+                    <td colspan="6" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>
+                <tr>
+                    <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Schedule/Notes To The Accounts(I) </td>
+                    <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="18" align="left" style="padding: 4px; font-weight: bold">@HeadType </td>
+
+                </tr>
+                <tr style="outline: thin solid">
+
+                    @{
+                        string d = Convert.ToString(fromdate);
+                        DateTime fdate = DateTime.Parse(d);
+                        string ffdt = fdate.ToString("dd-MMM-yyyy");
+
+
+                        string d2 = Convert.ToString(todate);
+                        DateTime fdate2 = DateTime.Parse(d2);
+                        string ffdt2 = fdate2.ToString("dd-MMM-yyyy");
+
+                    }
+                    @if (headtype == 1 || headtype == 2)
+                    {
+                        <td colspan="12" style="font-weight: bold;padding:4px">
+                            As On: <span style="font-weight:bold">@ffdt2</span>
+
+                        </td>
+                    }
+                    else
+                    {
+                        <td colspan="12" style="font-weight: bold;padding:4px">
+                            From : <span style="font-weight:bold">@ffdt</span> <span>To :</span>
+                            <span style="font-weight:bold">@ffdt2</span>
+                        </td>
+                    }
+
+
+
+
+                </tr>
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="12" style="color: white; padding: 4px; font-size: small" align="center">Particulars</td>
+                    <td colspan="6" style="color: white; padding: 4px; font-size: small" align="center">Amount</td>
+
+
+                </tr>
+            </thead>
+            <tbody>
+                @{
+
+                    var findaccountname = (from m in db.GlAcchartDbSet where m.COMPID == compid select new { m.ACCOUNTCD, m.ACCOUNTNM }).ToList();
+
+                    string status = "NO";
+                    Int64 i = 0;
+                }
+
+                @{
+                    Int64 maxHeadCD = Convert.ToInt64((from m in db.GlAccharmstDbSet
+                                                       where m.COMPID == compid && m.HEADTP == headtype
+                                                       select m.HEADCD).Max());
+                    Int64 minHeadCD = Convert.ToInt64((from m in db.GlAccharmstDbSet
+                                                       where m.COMPID == compid && m.HEADTP == headtype
+                                                       select m.HEADCD).Min());
+
+                }
+                @for (Int64 z = minHeadCD; z <= maxHeadCD; z++)
+                {
+                    Int64 Current_HeadCD = z;
+                    var getList = (from m in db.GlAcchartDbSet
+                                   where m.COMPID == compid && m.HEADCD == Current_HeadCD
+                                   select m).ToList();
+
+                    if (getList.Count != 0)
+                    {
+                        string HeadName = "", headType = "";
+                        var getHeadName = (from m in db.GlAccharmstDbSet where m.COMPID == compid && m.HEADCD == Current_HeadCD select new { m.HEADNM, m.HEADTP }).ToList();
+                        foreach (var VARIABLE in getHeadName)
+                        {
+                            HeadName = VARIABLE.HEADNM;
+                        }
+
+
+                        string datafind = "";
+                        foreach (var item2 in getList)
+                        {
+                            if (headtype == 1 || headtype == 2)
+                            {
+                                var debitcdfind1 = (from n in db.GlMasterDbSet where n.COMPID == compid && n.TRANSDT <= todate select new { n.DEBITCD }).Distinct().ToList();
+                                foreach (var item in debitcdfind1)
+                                {
+                                    foreach (var x in findaccountname)
+                                    {
+                                        datafind = "NO";
+                                        if (x.ACCOUNTCD == item.DEBITCD && x.ACCOUNTCD == item2.ACCOUNTCD)
+                                        {
+                                            var aa1 = Convert.ToString(item.DEBITCD).Substring(3, 1);
+                                            var tt1 = Convert.ToInt64(aa1);
+                                            if (tt1 == headtype)
+                                            {
+                                                datafind = "YES";
+                                            }
+                                            break;
+                                        }
+                                    }
+                                    if (datafind == "YES")
+                                    {
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                var debitcdfind2 = (from n in db.GlMasterDbSet where n.COMPID == compid && n.TRANSDT >= fromdate && n.TRANSDT <= todate select new { n.DEBITCD }).Distinct().ToList();
+                                foreach (var item in debitcdfind2)
+                                {
+                                    foreach (var x in findaccountname)
+                                    {
+                                        datafind = "NO";
+                                        if (x.ACCOUNTCD == item.DEBITCD && x.ACCOUNTCD == item2.ACCOUNTCD)
+                                        {
+                                            var aa1 = Convert.ToString(item.DEBITCD).Substring(3, 1);
+                                            var tt1 = Convert.ToInt64(aa1);
+                                            if (tt1 == headtype)
+                                            {
+                                                datafind = "YES";
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (datafind == "YES")
+                            {
+                                break;
+                            }
+                        }
+
+                        if (datafind == "YES")
+                        {
+                            <tr>
+                                <td><br /></td>
+                            </tr>
+                            <tr>
+                                <td align="left" colspan="18" style="padding-left: 4px">
+                                    <strong>@HeadName</strong>
+                                </td>
+                            </tr>
+                        }
+
+
+                        @*<tr>
+                                <td><br /></td>
+                            </tr>
+                            <tr>
+                                <td align="left" colspan="18" style="padding-left: 4px">
+                                    <strong>@HeadName</strong>
+                                </td>
+                            </tr>*@
+
+                        subtotal_Result = 0;
+                        foreach (var item1 in getList)
+                        {
+                            if (headtype == 1 || headtype == 2)
+                            {
+                                var debitcdfind = (from n in db.GlMasterDbSet where n.COMPID == compid && n.TRANSDT <= todate select new { n.DEBITCD }).Distinct().ToList();
+                                var tabledata = (from a in db.GlMasterDbSet where a.COMPID == compid && a.TRANSDT <= todate select a).ToList();
+
+
+                                foreach (var item in debitcdfind)
+                                {
+                                    var accountname = "";
+                                    foreach (var x in findaccountname)
+                                    {
+                                        status = "NO";
+                                        if (x.ACCOUNTCD == item.DEBITCD && x.ACCOUNTCD == item1.ACCOUNTCD)
+                                        {
+                                            var aa = Convert.ToString(item.DEBITCD).Substring(3, 1);
+                                            var tt = Convert.ToInt64(aa);
+                                            if (tt == headtype)
+                                            {
+                                                accountname = x.ACCOUNTNM;
+                                                status = "YES";
+                                            }
+                                            break;
+                                        }
+                                    }
+
+                                    if (status == "YES")
+                                    {
+                                        <tr style="outline: thin solid">
+                                            <td colspan="12" style="padding-left: 24px">
+                                                <a href="@Url.Action("RowWiseLinkPost","TrialBalance", new
+                                                                                                           {
+                                                                                                               COMPID = compid,
+                                                                                                               DEBITCD = item.DEBITCD,
+                                                                                                               ACCOUNTNM = accountname,
+                                                                                                           })" target="_blank" style="text-decoration: none; color: black;">
+                                                    @accountname
+                                                </a>
+                                            </td>
+                                            @{
+                                        sumdebit = 0;
+                                        sumcredit = 0;
+                                            }
+
+                                            @foreach (var x1 in tabledata)
+                                            {
+                                                if (x1.DEBITCD == item.DEBITCD)
+                                                {
+                                                    var aa = Convert.ToString(item.DEBITCD).Substring(3, 1);
+                                                    var tt = Convert.ToInt64(aa);
+                                                    if (tt == headtype)
+                                                    {
+                                                        sumdebit = Convert.ToDecimal(sumdebit + x1.DEBITAMT);
+                                                        sumcredit = Convert.ToDecimal(sumcredit + x1.CREDITAMT);
+                                                    }
+                                                }
+                                            }
+                                            @{
+
+                                            if (headtype == 1 || headtype == 4)
+                                            {
+                                                result = sumdebit - sumcredit;
+
+
+                                            }
+                                            else if (headtype == 2 || headtype == 3)
+                                            {
+                                                result = sumcredit - sumdebit;
+
+                                            }
+                                            subtotal_Result = Convert.ToDecimal(subtotal_Result + result);
+                                            totalsum = Convert.ToDecimal(totalsum + result);
+                                            decimal rr = 0;
+                                            Int64 st5 = 0;
+                                            string Result = "";
+                                            if (result < 0)
+                                            {
+                                                rr = result * (-1);
+                                                string convertamount5 = Convert.ToString(rr);
+                                                Result = CommainAmount.AmountwithComma(convertamount5);
+                                                st5 = 1;
+                                            }
+                                            else
+                                            {
+                                                string convertamount5 = Convert.ToString(result);
+                                                Result = CommainAmount.AmountwithComma(convertamount5);
+                                                st5 = 0;
+                                            }
+
+                                            }
+                                            @if (st5 == 1)
+                                            {
+                                                <td colspan="6" align="right">-@Result</td>
+                                            }
+                                            else
+                                            {
+                                                <td colspan="6" align="right">@Result</td>
+                                            }
+                                        </tr>
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                var debitcdfind = (from n in db.GlMasterDbSet where n.COMPID == compid && n.TRANSDT >= fromdate && n.TRANSDT <= todate select new { n.DEBITCD }).Distinct().ToList();
+                                var tabledata = (from a in db.GlMasterDbSet where a.COMPID == compid && a.TRANSDT >= fromdate && a.TRANSDT <= todate select a).ToList();
+                                foreach (var item in debitcdfind)
+                                {
+                                    var accountname = "";
+                                    foreach (var x in findaccountname)
+                                    {
+                                        status = "NO";
+                                        if (x.ACCOUNTCD == item.DEBITCD && x.ACCOUNTCD == item1.ACCOUNTCD)
+                                        {
+                                            var aa = Convert.ToString(item.DEBITCD).Substring(3, 1);
+                                            var tt = Convert.ToInt64(aa);
+                                            if (tt == headtype)
+                                            {
+                                                accountname = x.ACCOUNTNM;
+
+                                                status = "YES";
+                                            }
+
+                                            break;
+                                        }
+                                    }
+
+                                    if (status == "YES")
+                                    {
+                                        <tr style="outline: thin solid">
+                                            <td colspan="12" style="padding-left: 24px">
+                                                <a href="@Url.Action("RowWiseLinkPost","TrialBalance", new
+                                                                                                           {
+                                                                                                               COMPID = compid,
+                                                                                                               DEBITCD = item.DEBITCD,
+                                                                                                               ACCOUNTNM = accountname,
+                                                                                                           })" target="_blank" style="text-decoration: none; color: black;">
+                                                    @accountname
+                                                </a>
+                                            </td>
+                                            @{
+                                        sumdebit = 0;
+                                        sumcredit = 0;
+                                            }
+
+                                            @foreach (var x1 in tabledata)
+                                            {
+                                                if (x1.DEBITCD == item.DEBITCD)
+                                                {
+                                                    var aa = Convert.ToString(item.DEBITCD).Substring(3, 1);
+                                                    var tt = Convert.ToInt64(aa);
+                                                    if (tt == headtype)
+                                                    {
+                                                        sumdebit = Convert.ToDecimal(sumdebit + x1.DEBITAMT);
+                                                        sumcredit = Convert.ToDecimal(sumcredit + x1.CREDITAMT);
+                                                    }
+                                                }
+                                            }
+                                            @{
+
+                                            if (headtype == 1 || headtype == 4)
+                                            {
+                                                result = sumdebit - sumcredit;
+
+
+                                            }
+                                            else if (headtype == 2 || headtype == 3)
+                                            {
+                                                result = sumcredit - sumdebit;
+
+                                            }
+                                            subtotal_Result = Convert.ToDecimal(subtotal_Result + result);
+                                            totalsum = Convert.ToDecimal(totalsum + result);
+                                            decimal rr = 0;
+                                            Int64 st5 = 0;
+                                            string Result = "";
+                                            if (result < 0)
+                                            {
+                                                rr = result * (-1);
+                                                string convertamount5 = Convert.ToString(rr);
+                                                Result = CommainAmount.AmountwithComma(convertamount5);
+                                                st5 = 1;
+                                            }
+                                            else
+                                            {
+                                                string convertamount5 = Convert.ToString(result);
+                                                Result = CommainAmount.AmountwithComma(convertamount5);
+                                                st5 = 0;
+                                            }
+
+                                            }
+
+                                            @if (st5 == 1)
+                                            {
+                                                <td colspan="6" align="right">-@Result</td>
+                                            }
+                                            else
+                                            {
+                                                <td colspan="6" align="right">@Result</td>
+                                            }
+                                        </tr>
+
+                                    }
+                                }
+                            }
+                        }
+
+                        if (datafind == "YES")
+                        {
+                            <tr style=" outline: thin initial">
+                                <td colspan="12" align="right" style="font-weight: bold;padding-left: 4px">Sub Total : </td>
+                                @{
+                            string subtotal = "";
+                            if (subtotal_Result >= 0)
+                            {
+                                string convertsubtotal = Convert.ToString(subtotal_Result);
+
+                                subtotal = CommainAmount.AmountwithComma(convertsubtotal);
+                            }
+                            else
+                            {
+                                int aa = Convert.ToString(subtotal_Result).Length;
+                                string convertsubtotal = Convert.ToString(subtotal_Result).Substring(1, aa - 1);
+
+                                subtotal = CommainAmount.AmountwithComma(convertsubtotal);
+                                subtotal = "-" + subtotal;
+                            }
+                                }
+                                <td colspan="6" style="font-weight: bold" align="right">@subtotal</td>
+
+                            </tr>
+                        }
+
+                    }
+                }
+
+                <tr style=" outline: thin solid">
+                    <td colspan="12" align="right" style="font-weight: bold;padding-left: 4px">Total : </td>
+                    @{
+                        if (totalsum >= 0)
+                        {
+                            string convertamount = Convert.ToString(totalsum);
+
+                            totalSum = CommainAmount.AmountwithComma(convertamount);
+                        }
+                        else
+                        {
+                            int aa = Convert.ToString(totalsum).Length;
+                            string convertamount = Convert.ToString(totalsum).Substring(1, aa - 1);
+
+                            totalSum = CommainAmount.AmountwithComma(convertamount);
+                            totalSum = "-" + totalSum;
+                        }
+                    }
+                    <td colspan="6" style="font-weight: bold" align="right">@totalSum</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

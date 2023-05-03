@@ -1,0 +1,123 @@
+﻿@using AS_Therapy_GL.Models
+@model IEnumerable<AS_Therapy_GL.Models.AccountHeadModel>
+
+@{
+    ViewBag.Title = "EditAccountList";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+    Int64 compid = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"].ToString());
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    var accounthead = (from n in db.GlAccharmstDbSet where n.COMPID == compid orderby n.HEADTP ascending select new { n.HEADTP, n.HEADNM, n.ACCHARMSTId });
+
+}
+
+
+<div id="contentHeaderBox">
+    <h1>Account Head</h1>
+</div>
+<br />
+
+<div class="col-md-12">
+    @if (TempData["UpdateCategoryInfo"] != null)
+    {
+        <div class="panel-heading text-center">
+            <h4>@TempData["UpdateCategoryInfo"] </h4>
+        </div>
+    }
+
+    @if (TempData["DeleteCategoryInfo"] != null)
+    {
+        <div class="panel-heading text-center">
+            <h4>@TempData["DeleteCategoryInfo"] </h4>
+        </div>
+    }
+
+    @if (TempData["message"] != null)
+    {
+         <div class="panel-heading text-center">
+             <h4 style="color: #BD7F1C">@TempData["message"] </h4>
+        </div>
+    }
+
+
+    <div class="text-right">
+        @Html.ActionLink("Back to previous page", "Index")
+    </div>
+
+
+    <div class="panel panel-success">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <tr>
+
+                    <td>
+                        Head Type
+                    </td>
+                    <td>
+                        Head Name
+                    </td>
+                    <td></td>
+                </tr>
+
+                @foreach (var item in accounthead)
+                {
+                    <tr>
+                        @if (item.HEADTP == 1)
+                        {
+                            <td>
+                                ASSET
+                            </td>
+                        }
+
+
+
+                        else if (item.HEADTP == 2)
+                        {
+                            <td>
+                                LIABILITY
+                            </td>
+                        }
+                        else if (item.HEADTP == 3)
+                        {
+                            <td>
+                                INCOME
+                            </td>
+                        }
+                        else
+                        {
+                            <td>
+                                EXPENSE
+                            </td>
+                        }
+
+                        <td>
+                            @Html.DisplayFor(modelItem => item.HEADNM)
+                        </td>
+                        <td>
+                            @Html.ActionLink("Edit", "EditAccountHead", new { id = item.ACCHARMSTId }) |
+                            @Html.ActionLink("Delete", "DeleteAccountHead", new { id = item.ACCHARMSTId })
+                        </td>
+                    </tr>
+                }
+
+            </table>
+        </div>
+    </div>
+</div>

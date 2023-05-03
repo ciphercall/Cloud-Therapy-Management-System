@@ -1,0 +1,254 @@
+﻿@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+@{
+    ViewBag.Title = "patient_Therapy_History";
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    Int64 companyID = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"].ToString());
+    Int64 loggedUserID = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+
+
+    var permission_Check = from m in db.AslRoleDbSet
+                           where m.COMPID == companyID && m.USERID == loggedUserID
+                               && m.CONTROLLERNAME == "Report" && m.ACTIONNAME == "patient_Therapy_History"
+                           select m;
+    var Status = "";
+    foreach (var check in permission_Check)
+    {
+        Status = check.STATUS;
+    }
+
+    if (Status == "A")
+    {
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.Pst_Patient.COMPID, new { @Value = companyID })
+    @Html.HiddenFor(model => model.Pst_Patient.PATIENTID, new { id = "HiddentxtPATIENTID" })
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left: 16px;">Patient Therapy History</h1>
+    </div>
+    <br />
+
+    <div class="col-md-12">
+        <div class="form-group">
+
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "Patient ID", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.TextBoxFor(model => model.Pst_Patient.PATIENTIDM, htmlAttributes: new { id = "txt_PATIENTIDM", @class = "form-control", autofocus = true })
+                    @if (TempData["selectPatientID"] != null)
+                    {
+                        <h5 style="color: #C03523">@TempData["selectPatientID"]</h5>
+
+                    }
+                </div>
+
+            </div>
+
+
+
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "Patient Name", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-5">
+                    @Html.TextBoxFor(model => model.Pst_Patient.PATIENTNM, htmlAttributes: new { id = "txt_PATIENTNM", @class = "form-control", @readonly = "readonly" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-2"></div>
+                <div class="col-md-8">
+                    <input type="submit" class="btn btn-success" value="Print" formtarget="_blank" />
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+
+            //$('#fromDate').datepicker({
+            //    dateFormat: "dd-M-yy",
+            //    changeYear: true,
+            //    onClose: function (dateText, inst) {
+            //        document.getElementById("toDate").focus();
+            //    }
+            //});
+
+            //$('#toDate').datepicker({
+            //    dateFormat: "dd-M-yy",
+            //    changeYear: true,
+            //    onClose: function (dateText, inst) {
+            //        document.getElementById("SubmitId").focus();
+            //    }
+            //});
+
+
+            $('#txt_PATIENTIDM').autocomplete({
+
+                source: '@Url.Action("TagSearch", "Report")',
+                select: function (event, ui) {
+                    var changedtxt = ui.item.value;
+
+                    var hiddentxtPATIENTID = document.getElementById('HiddentxtPATIENTID');
+                    var txt_PATIENTNM = document.getElementById('txt_PATIENTNM');
+
+                    $.getJSON(
+                        "/Report/GetPatientInformation", { "Changedtxt": changedtxt },
+                        function (myData) {
+                            hiddentxtPATIENTID.value = myData.PATIENTID;
+                            txt_PATIENTNM.value = myData.PATIENTNM;
+                            document.getElementById("txt_PATIENTIDM").focus();
+                        });
+
+                    $("#HiddentxtPATIENTID").val("");
+                    $("#txt_PATIENTNM").val("");
+                },
+                change: $('#txt_PATIENTIDM').keyup(function (e) {
+                    $('#txt_PATIENTIDM').keyup(_.debounce(txtOneChanged(e.keyCode), 1000));
+                }),
+            });
+
+
+
+            function txtOneChanged(value) {
+                if (value != 8) {
+                    var changedText = $("#txt_PATIENTIDM").val();
+                    var txtBox = document.getElementById('txt_PATIENTIDM');
+
+                    if (changedText != "") {
+                        $.getJSON(
+                      '/Report/keyword', { "ChangedText": changedText },
+                       function (result) {
+                           txtBox.value = result.PATIENTIDM;
+                           document.getElementById("txt_PATIENTIDM").focus();
+                       });
+                    }
+                }            
+            }
+            
+
+
+
+        });
+
+
+    </script>
+
+
+
+    <style type="text/css">
+        .ui-autocomplete {
+            position: absolute;
+            cursor: default;
+            background: #f0ffff;
+            max-height: 200px;
+            overflow-y: auto;
+            /* prevent horizontal scrollbar */
+            overflow-x: hidden;
+            /* add padding to account for vertical scrollbar */
+            padding-right: 20px;
+        }
+
+
+        /*html .ui-autocomplete {
+                                    width: 1px;
+                                }
+
+                                .ui-menu {
+                                    list-style: none;
+                                    padding: 2px;
+                                    margin: 0;
+                                    display: block;
+                                    float: left;
+                                }
+
+                                    .ui-menu .ui-menu {
+                                        margin-top: -3px;
+                                    }
+
+                                    .ui-menu .ui-menu-item {
+                                        margin: 0;
+                                        padding: 0;
+                                        zoom: 1;
+                                        float: left;
+                                        clear: left;
+                                        width: 100%;
+                                    }
+
+                                        .ui-menu .ui-menu-item a {
+                                            text-decoration: none;
+                                            display: block;
+                                            padding: .2em .4em;
+                                            line-height: 1.5;
+                                            zoom: 1;
+                                        }
+
+                                            .ui-menu .ui-menu-item a.ui-state-hover,
+                                            .ui-menu .ui-menu-item a.ui-state-active {
+                                                font-weight: normal;
+                                                margin: -1px;
+                                            }*/
+    </style>
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+<script src="~/Scripts/Underscore.js"></script>
+
+
+

@@ -1,0 +1,218 @@
+﻿@using System.Web.UI.WebControls
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+
+
+@{
+    ViewBag.Title = "Index";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    var LoggedCompId = HttpContext.Current.Session["loggedCompID"].ToString();
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+    Int64 loggedUserID = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+
+
+    var permission_Check = from m in db.AslRoleDbSet
+                           where m.COMPID == compid && m.USERID == loggedUserID
+                               && m.CONTROLLERNAME == "Ledger" && m.ACTIONNAME == "Index"
+                           select m;
+    var Status = "";
+    foreach (var check in permission_Check)
+    {
+        Status = check.STATUS;
+    }
+
+    if (Status == "A")
+    {
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+}
+
+
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.AGlMaster.COMPID, new { id = "txtCompId", @Value = LoggedCompId })
+    @*@Html.HiddenFor(model => model.AGlMaster.DEBITCD, new { id = "txtHeadId", @Value = TempData["HeadCD"] })*@
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">General Ledger</h1>
+    </div>
+    <br />
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+
+                <div class="col-md-4">
+                    <span>@Html.Label("name", "Account Head", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.TextBoxFor(model => model.AGL_acchart.ACCOUNTNM, htmlAttributes: new { id = "txtAccountName", @class = "form-control input-sm", autofocus = true })
+                    @*@Html.ValidationMessageFor(model => model.HEADTP, "", new { @class = "text-danger" })*@
+                </div>
+
+                <div class="col-md-3">
+                    <span>@Html.Label("name", "From", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.TextBoxFor(model => model.FromDate, new { @class = "form-control input-sm", id = "idFromdate", @Value = currentDateTime.ToString("dd-MMM-yyyy") })
+                    @*@Html.ValidationMessageFor(model => model.HEADNM, "", new { @class = "text-danger" })*@
+                </div>
+
+                <div class="col-md-3">
+                    <span>@Html.Label("name", "To", htmlAttributes: new { @class = "control-label" })</span>
+                    @Html.TextBoxFor(model => model.ToDate, new { @class = "form-control input-sm", id = "idTodate", @Value = currentDateTime.ToString("dd-MMM-yyyy") })
+                    @*@Html.ValidationMessageFor(model => model.HEADNM, "", new { @class = "text-danger" })*@
+                </div>
+
+
+                <div class="col-md-2">
+                    <span><br /></span>
+                    <input id="SubmitId" type="submit" class="btn btn-info" value="Print" name="command" formtarget="_blank" />
+                </div>
+
+            </div>
+        </div>
+
+
+
+
+    </div>
+
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#idFromdate").datepicker({
+                dateFormat: 'dd-M-yy',
+                changeYear: true,
+                onClose: function (dateText, inst) {
+                    document.getElementById("idTodate").focus();
+                }
+            });
+
+            $("#idTodate").datepicker({
+                dateFormat: 'dd-M-yy',
+                changeYear: true,
+                onClose: function (dateText, inst) {
+                    document.getElementById("SubmitId").focus();
+                }
+            });
+
+            $('#txtAccountName').autocomplete(
+           {
+               source: '@Url.Action("TagSearch", "ClosingBalance")',
+               change: $('#txtAccountName').keyup(function (e) {
+                   $('#txtAccountName').keyup(_.debounce(txtOneChanged(e.keyCode), 1000));
+               }),
+               select: function (event, ui) {
+                   $("#txtAccountName").val(ui.item.label);
+                   txtOneChanged();
+               }
+
+           });
+
+        });
+        function txtOneChanged(value) {
+            if (value != 8) {
+                var changedText = $("#txtAccountName").val();
+                var txtBox = document.getElementById('txtAccountName');
+                var txtBox1 = document.getElementById('txtAccountcd');
+                $.getJSON(
+                    '/ClosingBalance/ItemNameChanged', { "ChangedText": changedText },
+                    function (result) {
+                        txtBox.value = result.Accountname;
+                        txtBox1.value = result.debitcd;
+
+                        document.getElementById("txtAccountName").focus();
+                    });
+            }      
+        }
+    </script>
+
+
+    <style type="text/css">
+        .ui-autocomplete {
+            position: absolute;
+            cursor: default;
+            background: #f0ffff;
+            max-height: 200px;
+            overflow-y: auto;
+            /* prevent horizontal scrollbar */
+            overflow-x: hidden;
+            /* add padding to account for vertical scrollbar */
+            padding-right: 20px;
+        }
+
+
+        /*html .ui-autocomplete {
+                                    width: 1px;
+                                }
+
+                                .ui-menu {
+                                    list-style: none;
+                                    padding: 2px;
+                                    margin: 0;
+                                    display: block;
+                                    float: left;
+                                }
+
+                                    .ui-menu .ui-menu {
+                                        margin-top: -3px;
+                                    }
+
+                                    .ui-menu .ui-menu-item {
+                                        margin: 0;
+                                        padding: 0;
+                                        zoom: 1;
+                                        float: left;
+                                        clear: left;
+                                        width: 100%;
+                                    }
+
+                                        .ui-menu .ui-menu-item a {
+                                            text-decoration: none;
+                                            display: block;
+                                            padding: .2em .4em;
+                                            line-height: 1.5;
+                                            zoom: 1;
+                                        }
+
+                                            .ui-menu .ui-menu-item a.ui-state-hover,
+                                            .ui-menu .ui-menu-item a.ui-state-active {
+                                                font-weight: normal;
+                                                margin: -1px;
+                                            }*/
+    </style>
+}
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+<script src="~/Scripts/Underscore.js"></script>

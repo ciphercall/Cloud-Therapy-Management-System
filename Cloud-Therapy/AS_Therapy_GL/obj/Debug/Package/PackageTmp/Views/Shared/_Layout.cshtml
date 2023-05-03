@@ -1,0 +1,739 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using AS_Therapy_GL.Models
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Alchemy Software | Cloud Therapy</title>
+    <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+
+
+    @*<link href="~/Content/bootstrap-3.2.0-dist/css/bootstrap.css" rel="stylesheet" />*@
+    <link href="~/Content/bootstrap-3.2.0-dist/css/bootstrap-theme.css" rel="stylesheet" />
+    @*<script src="~/Content/bootstrap-3.2.0-dist/js/jquery-2.1.0.min.js"></script>*@
+    <script src="~/Content/bootstrap-3.2.0-dist/js/bootstrap.js"></script>
+    @*font-awesome "Glyphicons"*@
+    @*<link href="~/Content/font-awesome-4.2.0/css/font-awesome.css" rel="stylesheet" />*@
+    @*bootstrap -Clock Picker*@
+    <link href="~/Content/bootstrap-clockpicker/src/clockpicker.css" rel="stylesheet" />
+    <script src="~/Content/bootstrap-clockpicker/src/clockpicker.js"></script>
+    <link href="~/Content/bootstrap-clockpicker/src/standalone.css" rel="stylesheet" />
+
+    @* new added..................................... *@
+    <script src="~/Content/AdminPanel/js/jquery-2.1.3.js"></script>
+    <link href="~/Content/AdminPanel/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/Content/AdminPanel/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="~/Content/AdminPanel/css/sweet-alert.css" rel="stylesheet" />
+    <link href="~/Content/AdminPanel/css/Theme/Default.css" rel="stylesheet" />
+    @*<link id="themeStyle" href="~/Content/AdminPanel/css/style.css" rel="stylesheet" />*@
+    <link href="~/Content/AdminPanel/css/Theme/responsive.css" rel="stylesheet" />
+
+    @*@Styles.Render("~/Content/css")
+        @Scripts.Render("~/bundles/modernizr")*@
+</head>
+<body>
+    <div class="container">
+        <div class="row" id="header">
+            <div class="col-md-12">
+                <div class="col-md-2 logo">
+                    <h1>
+                        AS:GL <a href="#" id="menuCollapse"><i class="fa fa-1x fa-caret-left"></i></a>
+                        <i class="fa fa-bars" id="normalView"></i><a href="#" id="responsiveMenu"><i class="fa fa-bars"></i></a> <a href="#" id="menuExpand"><i class="fa fa-1x fa-caret-right"></i></a>
+                    </h1>
+                </div>
+                <!-- sidebar end here -->
+                <div class="col-md-10" id="pageHeader">
+                    <div class="col-md-6">
+                        @if (HttpContext.Current.Session["LoggedUserType"] != null && (HttpContext.Current.Session["LoggedUserType"].ToString() == "CompanyAdmin" || HttpContext.Current.Session["LoggedUserType"].ToString() == "UserAdmin" || HttpContext.Current.Session["LoggedUserType"].ToString() == "User") && HttpContext.Current.Session["LoggedUserStatus"].ToString() == "A")
+                        {
+                            var companyName = ViewData["CompanyName"].ToString();
+                            <h1>@companyName</h1>
+                        }
+                        else
+                        {
+                            <h1>Alchemy Software</h1>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <div id="profile_photo">
+                            @if (HttpContext.Current.Session["LoggedUserType"] != null && HttpContext.Current.Session["LoggedUserType"].ToString() == "AslSuperadmin" && HttpContext.Current.Session["LoggedUserStatus"].ToString() == "A")
+                            {
+                                <span class="searchBox">
+                                    Hello! <strong>@HttpContext.Current.Session["LoggedUserName"].ToString()</strong>
+                                </span>
+                                <img src="../../Content/AdminPanel/images/profile.png" width="30" height="30" alt="" />
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu pull-right" style="" role="menu">
+                                        <li><a href="/logout">Logout</a></li>
+                                    </ul>
+                                </div>
+                            }
+
+                            else if (HttpContext.Current.Session["LoggedUserType"] != null && (HttpContext.Current.Session["LoggedUserType"].ToString() == "CompanyAdmin" || HttpContext.Current.Session["LoggedUserType"].ToString() == "UserAdmin" || HttpContext.Current.Session["LoggedUserType"].ToString() == "User") && HttpContext.Current.Session["LoggedUserStatus"].ToString() == "A")
+                            {
+                                <span class="searchBox">
+                                    Hello! <strong>@HttpContext.Current.Session["LoggedUserName"].ToString()</strong>
+                                </span>
+                                <img src="../../Content/AdminPanel/images/profile.png" width="30" height="30" alt="" />
+
+                                  <!--Notification logo-->
+                                <div class="btn-group">
+                                    <span class="fa fa-bell-o fa-lg" aria-hidden="true" id="noti" style="right: 100px; font-size: 20px; cursor: pointer;"><span class="count" id="notiCount" style="position: relative; top: -9px; color: blue; font-weight: bold;">&nbsp;</span></span>
+                                    <ul class="list-group" id="notiContent" style="width: 24em; height: 32em; line-height: 1em; border: 1px solid #ccc; padding: 0; margin: 0; overflow: scroll; overflow-x: hidden; background-color: #FFFFFF; background-image: url(/Images/Notification/notificatoins.jpg); background-repeat: no-repeat; background-size: contain; background-position-y: 0px;"></ul>
+                                </div>
+
+
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu pull-right" style="" role="menu">
+                                        <li>@Html.ActionLink("Update Password", "PasswordChangedForm", "Password")</li>
+                                        <li><a href="/logout">Logout</a></li>
+                                    </ul>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="btn-group">
+                                    <a class="btn btn-info" href="../Login/">Login</a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <!--   <hr> -->
+                </div>
+                <!-- <hr> -->
+            </div>
+        </div>
+        <!-- header end -->
+        <div style="border-top:1px solid #EAECEC;"></div>
+        <!-- secondary header end -->
+        <!-- sidebar start -->
+        <div class="col-md-2" id="sidebar">
+            @if (HttpContext.Current.Session["LoggedUserType"] != null && HttpContext.Current.Session["LoggedUserType"].ToString() == "AslSuperadmin" && HttpContext.Current.Session["LoggedUserStatus"].ToString() == "A")
+            {
+                <ul class="accordion">
+                    @if (ViewData["HighLight_Menu_InputForm"] != null)
+                    {
+                        <li class="active">
+                            <span><i class="fa fa-user"></i></span> <span class="mainMenuText">Input Form</span>
+                            <ul class="subMenu">
+                                <li>@Html.ActionLink("Company Creation", "Create", "AslCompany")</li>
+                                <li>@Html.ActionLink("Create Menu List", "Index", "ASL_MENU")</li>
+                                <li>@Html.ActionLink("Permission Menu", "PermissionFrom", "MenuPermission")</li>
+                                <li>@Html.ActionLink("Promotional Calendar", "Index", "PromotionalCalendarUpload")</li>
+                            </ul>
+                        </li>
+                    }
+                    else
+                    {
+                        <li>
+                            <span><i class="fa fa-user"></i></span> <span class="mainMenuText">Input Form</span>
+                            <ul class="subMenu">
+                                <li>@Html.ActionLink("Company Creation", "Create", "AslCompany")</li>
+                                <li>@Html.ActionLink("Create Menu List", "Index", "ASL_MENU")</li>
+                                <li>@Html.ActionLink("Permission Menu", "PermissionFrom", "MenuPermission")</li>
+                                <li>@Html.ActionLink("Promotional Calendar", "Index", "PromotionalCalendarUpload")</li>
+                            </ul>
+                        </li>
+                    }
+
+
+                    @if (ViewData["HighLight_Menu_InformationForm"] != null)
+                    {
+                        <li class="active">
+                            <span><i class="fa fa-table"></i></span> <span class="mainMenuText">Information Form</span>
+                            <ul class="subMenu">
+                                <li>@Html.ActionLink("Company Information", "Index", "AslCompany")</li>
+                                <li> @Html.ActionLink("List of Companies User", "SearchCompanyList", "AslUserCo")</li>
+                                <li> @Html.ActionLink("Module Information", "ShowModuleList", "ASL_MENU")</li>
+                                <li> @Html.ActionLink("Menu Information", "ShowMenuList", "ASL_MENU")</li>
+                                <li> @Html.ActionLink("User Role Information", "ViewRoleList", "ASL_ROLE")</li>
+                            </ul>
+                        </li>
+                    }
+                    else
+                    {
+                        <li>
+                            <span><i class="fa fa-table"></i></span> <span class="mainMenuText">Information Form</span>
+                            <ul class="subMenu">
+                                <li>@Html.ActionLink("Company Information", "Index", "AslCompany")</li>
+                                <li> @Html.ActionLink("List of Companies User", "SearchCompanyList", "AslUserCo")</li>
+                                <li> @Html.ActionLink("Module Information", "ShowModuleList", "ASL_MENU")</li>
+                                <li> @Html.ActionLink("Menu Information", "ShowMenuList", "ASL_MENU")</li>
+                                <li> @Html.ActionLink("User Role Information", "ViewRoleList", "ASL_ROLE")</li>
+                            </ul>
+                        </li>
+                    }
+
+
+                    <li>
+                        <span><i class="fa fa-cog"></i></span> <span class="mainMenuText">Settings</span>
+                        <ul class="subMenu">
+                            <li>@Html.ActionLink("Theme Set", "Settings", "Home")</li>
+                        </ul>
+                    </li>
+                </ul>
+            }
+            else if (HttpContext.Current.Session["LoggedUserType"] != null && (HttpContext.Current.Session["LoggedUserType"].ToString() == "CompanyAdmin" || HttpContext.Current.Session["LoggedUserType"].ToString() == "UserAdmin" || HttpContext.Current.Session["LoggedUserType"].ToString() == "User") && HttpContext.Current.Session["LoggedUserStatus"].ToString() == "A")
+            {
+                //User(Forms) Dynamic Menu
+                foreach (var a in (IEnumerable<ASL_ROLE>)ViewData["validUserForm"])
+                {
+                    if (a.STATUS == "A")
+                    {
+                        ViewData["ActiveUserForm"] = a.STATUS;
+                    }
+                }
+
+                //User(Report) Dynamic Menu
+                foreach (var a in (IEnumerable<ASL_ROLE>)ViewData["validUserReports"])
+                {
+                    if (a.STATUS == "A")
+                    {
+                        ViewData["ActiveUserReport"] = a.STATUS;
+                    }
+                }
+
+
+
+                //Stock(Forms) Dynamic Menu
+                foreach (var a in (IEnumerable<ASL_ROLE>)ViewData["validBillingForm"])
+                {
+                    if (a.STATUS == "A")
+                    {
+                        ViewData["ActiveBillingForm"] = a.STATUS;
+                    }
+                }
+
+                //Stock(Report) Dynamic Menu
+                foreach (var a in (IEnumerable<ASL_ROLE>)ViewData["validBillingReports"])
+                {
+                    if (a.STATUS == "A")
+                    {
+                        ViewData["ActiveBillingReports"] = a.STATUS;
+                    }
+                }
+
+                //GL(Forms) Dynamic Menu
+                foreach (var a in (IEnumerable<ASL_ROLE>)ViewData["validAccountForm"])
+                {
+                    if (a.STATUS == "A")
+                    {
+                        ViewData["ActiveAccountForm"] = a.STATUS;
+                    }
+                }
+
+                //GL(Report) Dynamic Menu
+                foreach (var a in (IEnumerable<ASL_ROLE>)ViewData["validAccountReports"])
+                {
+                    if (a.STATUS == "A")
+                    {
+                        ViewData["ActiveAccountReports"] = a.STATUS;
+                    }
+                }
+
+
+                //Promotion(Forms) Dynamic Menu
+                foreach (var a in (IEnumerable<ASL_ROLE>)ViewData["validPromotionForm"])
+                {
+                    if (a.STATUS == "A")
+                    {
+                        ViewData["ActivePromotionForm"] = a.STATUS;
+                    }
+                }
+
+
+
+
+                <ul class="accordion">
+                    @if (HttpContext.Current.Session["LoggedUserType"].ToString() == "CompanyAdmin" || HttpContext.Current.Session["LoggedUserType"].ToString() == "UserAdmin" || HttpContext.Current.Session["LoggedUserType"].ToString() == "User")
+                    {
+                        if (ViewData["HighLight_Menu_DashBoard"] != null)
+                        {
+                            <li class="active"><i class="fa fa-home"></i><span class="mainMenuText"> @Html.ActionLink("DASHBOARD", "Index", "GraphView", "", new { @style = "color: Black;" })</span></li>
+                        }
+                        else
+                        {
+                            <li><i class="fa fa-home"></i><span class="mainMenuText"> @Html.ActionLink("DASHBOARD", "Index", "GraphView", "", new { @style = "color: #d1d6d8;" })</span></li>
+                        }
+                    }
+
+                    @if (ViewData["validUserForm"] != null && ViewData["ActiveUserForm"] != null)
+                    {
+                        if (ViewData["HighLight_Menu_UserForm"] != null)
+                        {
+                            <li class="active">
+                                <span><i class="fa fa-user"></i></span> <span class="mainMenuText">User(Form)</span>
+                                <ul class="subMenu">
+                                    @foreach (var c in (IEnumerable<ASL_ROLE>)ViewData["validUserForm"])
+                                    {
+                                        <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME)</li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li>
+                                <span><i class="fa fa-user"></i></span> <span class="mainMenuText">User(Form)</span>
+                                <ul class="subMenu">
+                                    @foreach (var c in (IEnumerable<ASL_ROLE>)ViewData["validUserForm"])
+                                    {
+                                        <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME)</li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                    }
+
+                    @if (ViewData["validUserReports"] != null && ViewData["ActiveUserReport"] != null)
+                    {
+                        if (ViewData["HighLight_Menu_UserReport"] != null)
+                        {
+                            <li class="active">
+                                <span><i class="fa fa-table"></i></span> <span class="mainMenuText">User(Report)</span>
+                                <ul class="subMenu">
+                                    @foreach (var c in (IEnumerable<ASL_ROLE>)ViewData["validUserReports"])
+                                    {
+                                        //<li> @Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME, "", new { target = "_blank" }) </li>
+                                        <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME)</li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li>
+                                <span><i class="fa fa-table"></i></span> <span class="mainMenuText">User(Report)</span>
+                                <ul class="subMenu">
+                                    @foreach (var c in (IEnumerable<ASL_ROLE>)ViewData["validUserReports"])
+                                    {
+                                        //<li> @Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME, "", new { target = "_blank" }) </li>
+                                        <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME)</li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                    }
+
+                    @if (ViewData["validBillingForm"] != null && ViewData["ActiveBillingForm"] != null)
+                    {
+                        if (ViewData["HighLight_Menu_BillingForm"] != null)
+                        {
+                            <li class="active">
+                                <span><i class="fa fa-tag"></i></span> <span class="mainMenuText">Therapy(Form)</span>
+                                <ul class="subMenu">
+                                    @foreach (var c in (IEnumerable<ASL_ROLE>)ViewData["validBillingForm"])
+                                    {
+                                        <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME)</li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li>
+                                <span><i class="fa fa-tag"></i></span> <span class="mainMenuText">Therapy(Form)</span>
+                                <ul class="subMenu">
+                                    @foreach (var c in (IEnumerable<ASL_ROLE>)ViewData["validBillingForm"])
+                                    {
+                                        <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME)</li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+
+                    }
+
+                    @if (ViewData["validBillingReports"] != null && ViewData["ActiveBillingReports"] != null)
+                    {
+                        if (ViewData["HighLight_Menu_BillingReport"] != null)
+                        {
+                            <li class="active">
+                                <span><i class="fa fa-table"></i></span> <span class="mainMenuText">Therapy(Report)</span>
+                                <ul class="subMenu">
+                                    @foreach (var c in (IEnumerable<ASL_ROLE>)ViewData["validBillingReports"])
+                                    {
+                                        if (c.ACTIONNAME == "GetItemList" && c.CONTROLLERNAME == "Report")
+                                        {
+                                            <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME, "", new { target = "_blank" })</li>
+                                        }
+                                        else
+                                        {
+                                            <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME)</li>
+                                        }
+
+                                    }
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li>
+                                <span><i class="fa fa-table"></i></span> <span class="mainMenuText">Therapy(Report)</span>
+                                <ul class="subMenu">
+                                    @foreach (var c in (IEnumerable<ASL_ROLE>)ViewData["validBillingReports"])
+                                    {
+                                        if (c.ACTIONNAME == "GetItemList" && c.CONTROLLERNAME == "Report")
+                                        {
+                                            <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME, "", new { target = "_blank" })</li>
+                                        }
+                                        else
+                                        {
+                                            <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME)</li>
+                                        }
+
+                                    }
+                                </ul>
+                            </li>
+                        }
+
+                    }
+
+                    @if (ViewData["validAccountForm"] != null && ViewData["ActiveAccountForm"] != null)
+                    {
+                        if (ViewData["HighLight_Menu_AccountForm"] != null)
+                        {
+                            <li class="active">
+                                <span><i class="fa fa-tag"></i></span> <span class="mainMenuText">GL(Form)</span>
+                                <ul class="subMenu">
+                                    @foreach (var c in (IEnumerable<ASL_ROLE>)ViewData["validAccountForm"])
+                                    {
+                                        <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME)</li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li>
+                                <span><i class="fa fa-tag"></i></span> <span class="mainMenuText">GL(Form)</span>
+                                <ul class="subMenu">
+                                    @foreach (var c in (IEnumerable<ASL_ROLE>)ViewData["validAccountForm"])
+                                    {
+                                        <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME)</li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                    }
+
+                    @if (ViewData["validAccountReports"] != null && ViewData["ActiveAccountReports"] != null)
+                    {
+                        if (ViewData["HighLight_Menu_AccountReports"] != null)
+                        {
+                            <li class="active">
+                                <span><i class="fa fa-table"></i></span> <span class="mainMenuText">GL(Report)</span>
+                                <ul class="subMenu">
+                                    @foreach (var c in (IEnumerable<ASL_ROLE>)ViewData["validAccountReports"])
+                                    {
+                                        if (c.ACTIONNAME == "Get_ListofCostPool" && c.CONTROLLERNAME == "ListReport")
+                                        {
+                                            <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME, "", new { target = "_blank" })</li>
+
+                                        }
+                                        else if (c.ACTIONNAME == "Get_HeadOfAccounts_List" && c.CONTROLLERNAME == "ListReport")
+                                        {
+
+                                            <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME, "", new { target = "_blank" })</li>
+                                        }
+                                        else
+                                        {
+                                            <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME)</li>
+                                        }
+                                    }
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li>
+                                <span><i class="fa fa-table"></i></span> <span class="mainMenuText">GL(Report)</span>
+                                <ul class="subMenu">
+                                    @foreach (var c in (IEnumerable<ASL_ROLE>)ViewData["validAccountReports"])
+                                    {
+                                        if (c.ACTIONNAME == "Get_ListofCostPool" && c.CONTROLLERNAME == "ListReport")
+                                        {
+                                            <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME, "", new { target = "_blank" })</li>
+
+                                        }
+                                        else if (c.ACTIONNAME == "Get_HeadOfAccounts_List" && c.CONTROLLERNAME == "ListReport")
+                                        {
+
+                                            <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME, "", new { target = "_blank" })</li>
+                                        }
+                                        else
+                                        {
+                                            <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME)</li>
+                                        }
+                                    }
+                                </ul>
+                            </li>
+                        }
+                    }
+
+
+
+                    @if (ViewData["validPromotionForm"] != null && ViewData["ActivePromotionForm"] != null)
+                    {
+                        if (ViewData["HighLight_Menu_PromotionForm"] != null)
+                        {
+                            <li class="active">
+                                <span><i class="fa fa-rss"></i></span> <span class="mainMenuText">Promotion</span>
+                                <ul class="subMenu">
+                                    @foreach (var c in (IEnumerable<ASL_ROLE>)ViewData["validPromotionForm"])
+                                    {
+                                        <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME)</li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li>
+                                <span><i class="fa fa-rss"></i></span> <span class="mainMenuText">Promotion</span>
+                                <ul class="subMenu">
+                                    @foreach (var c in (IEnumerable<ASL_ROLE>)ViewData["validPromotionForm"])
+                                    {
+                                        <li>@Html.ActionLink(c.MENUNAME, c.ACTIONNAME, c.CONTROLLERNAME)</li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                    }
+
+                    @*Promotional Calendar*@
+                    @if (ViewData["HighLight_Menu_PromotionalCalendar"] != null)
+                    {
+                        <li class="active"><i class="fa fa-calendar"></i><span class="mainMenuText"> @Html.ActionLink("Calendar", "Index", "PromotionalCalendarView", "", new { @style = "color: Black;" })</span></li>
+                    }
+                    else
+                    {
+                        <li><i class="fa fa-calendar"></i><span class="mainMenuText"> @Html.ActionLink("Calendar", "Index", "PromotionalCalendarView", "", new { @style = "color: #d1d6d8;" })</span></li>
+                    }
+
+                    @if (ViewData["HighLight_Menu_SchedularCalendar"] != null)
+                    {
+                        <li class="active"><i class="fa fa-calendar-check-o"></i><span class="mainMenuText"> @Html.ActionLink("Scheduler", "Index", "SchedulerCalendar", "", new { @style = "color: Black;" })</span></li>
+                    }
+                    else
+                    {
+                        <li><i class="fa fa-calendar-check-o"></i><span class="mainMenuText"> @Html.ActionLink("Scheduler", "Index", "SchedulerCalendar", "", new { @style = "color: #d1d6d8;" })</span></li>
+                    }
+
+                    @if (HttpContext.Current.Session["LoggedUserType"] != null && (HttpContext.Current.Session["LoggedUserType"].ToString() == "CompanyAdmin") && HttpContext.Current.Session["LoggedUserStatus"].ToString() == "A")
+                    {
+                        if (ViewData["HighLight_Menu_Settings"] != null)
+                        {
+                            <li class="active">
+                                <span><i class="fa fa-cog"></i></span> <span class="mainMenuText">Settings</span>
+                                <ul class="subMenu">
+                                    <li>@Html.ActionLink("User Permission", "Index", "ASL_ROLE")</li>
+                                    <li>@Html.ActionLink("Search User Information", "SearchUserList", "AslUserCo")</li>
+                                    <li>@Html.ActionLink("Category Lists", "ShowCategoryList", "PST_Item")</li>
+                                    <li>@Html.ActionLink("Theme Set", "Settings", "Home")</li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li>
+                                <span><i class="fa fa-cog"></i></span> <span class="mainMenuText">Settings</span>
+                                <ul class="subMenu">
+                                    <li>@Html.ActionLink("User Permission", "Index", "ASL_ROLE")</li>
+                                    <li>@Html.ActionLink("Search User Information", "SearchUserList", "AslUserCo")</li>
+                                    <li>@Html.ActionLink("Category Lists", "ShowCategoryList", "PST_Item")</li>
+                                    <li>@Html.ActionLink("Theme Set", "Settings", "Home")</li>
+                                </ul>
+                            </li>
+                        }
+                    }
+                </ul>
+            }
+            <div class="sidebar_divider" id="developerDivider"></div>
+
+
+            <div id="developer">
+                <div class="sidebar_divider" style="width:90%;padding-bottom:10px;"></div>
+                @*<div id="btnChat">
+                        <span><i class="fa fa-comments"></i> Chat <span class="notification">12</span></span>
+                    </div>
+                    <div id="btnMail">
+                        <span><i class="fa fa-envelope-o"></i> Mail <span class="notification">12</span></span>
+                    </div>*@
+
+                <div style="margin-top:0px;">
+                    <div id="developerName">
+                        <p>
+                            Developed by :<span> <a href="">Alchemy Software</a></span>
+                        </p>
+                    </div>
+                    <div id="developerLogo">
+                        <img src="../../Content/AdminPanel/images/alchemy.png" alt="">
+                    </div>
+                </div>
+
+                <div id="pop-up">
+                    <span class="pull-right"><a href="#" id="closePopUp"><i class="fa fa-times"></i></a></span>
+                    <iframe id="myIframeID" src="https://www.facebook.com/AlchemySoftware" name="iframe_a" width="260" scrolling="no"></iframe>
+                </div>
+                <!--link popup end-->
+            </div>
+            <!-- developer section end here -->
+        </div>
+        <!-- sidebar end -->
+        <!-- main content start here -->
+        <div class="col-md-10 pull-right" id="mainContentBox">
+            <div id="contentBox">
+                @*<div id="contentHeaderBox">
+
+                    </div>*@
+                @*<div class="col-md-12">*@
+                @RenderSection("featured", required: false)
+                @RenderBody()
+                @*</div>*@
+            </div> <!-- content box end here -->
+        </div>
+        <!-- main content end here -->
+
+    </div>
+    <!-- container end -->
+
+
+
+    <script src="~/Content/AdminPanel/js/jquery.cookie.js"></script>
+    <script src="~/Content/AdminPanel/js/bootstrap.min.js"></script>
+    <script src="~/Content/AdminPanel/js/sweet-alert.min.js"></script>
+    <script src="~/Content/AdminPanel/js/function.js"></script>
+
+
+
+
+    @if (TempData["BrackFieldDropFromLayout_AslUserCOController"] != null)
+    {
+
+    }
+    else
+    {
+        <br />
+        <br />
+        <br />
+    }
+
+    @*@Scripts.Render("~/bundles/jquery")*@
+    @RenderSection("scripts", required: false)
+
+    <style type="text/css">
+        /*Added css for design notification area, you can design by your self*/
+        ul#notiContent {
+            position: absolute;
+            right: 0px;
+            z-index: 100;
+            display: block;
+            width: 200px;
+            top: 45px;
+        }
+    </style>
+
+    <script src="~/Scripts/bootstrap-hover-dropdown.js"></script>
+    <script>
+        // very simple to use!
+        $(document).ready(function () {
+            $('.js-activated').dropdownHover().dropdown();
+
+
+            //if leisure Time running in 30 minute then automatically logout the processing.
+            var min = 30 * 60 * 1000;
+            var myVar = setInterval(function () { myFuncTwo(); }, min);
+
+            function myFunc() {
+                clearInterval(myVar);
+                setTimeout(function () { myFuncTwo(); }, min);
+            }
+
+            function myFuncTwo() {
+                window.location = "/Logout/Index";
+            }
+
+
+
+
+            // hide notifications
+            $('#notiContent').hide();
+            //show notification
+            updateNotificationCount();
+            //show notification if leisure Time running in 1 minute
+            var getNotificationtime = 2 * 60 * 1000;
+            var getNotification = setInterval(function () { updateNotificationCount(); }, getNotificationtime);
+
+            // Click on notification icon for show notification
+            $('#noti').click(function (e) {
+                e.stopPropagation();
+                $('#notiContent').show();
+                updateNotification();
+                updateNotificationCount();
+
+            });
+            // hide notifications
+            $('html').click(function () {
+                $('#notiContent').hide();
+            });
+
+            // update notification
+            function updateNotification() {
+                $('#notiContent').empty();
+                $('#notiContent').append($('<li class="list-group-item" style="background-color: rgba(255,255,255,0.6);">Loading...</li>'));
+                $.ajax({
+                    type: 'GET',
+                    url: '/Notification/GetNotificationContacts',
+                    success: function (response) {
+                        $('#notiContent').empty();
+                        if (response.length == 0) {
+                            $('#notiContent').append($('<li class="list-group-item" style="background-color: rgba(255,255,255,0.6);">No data available</li>'));
+                        }
+                        $.each(response, function (index, value) {
+                            $('#notiContent').append($('<li class="list-group-item" style="background-color: rgba(255,255,255,0.6);"><a href="/SchedulerCalendar/Index/" Style="color: black;">' +
+                                '<P style="font-weight: bold;color: blue;">' + value.Title + '</p>' +
+                                '<p>Start Date: ' + value.StartDate + '</p>' +
+                                '<p>End Date: ' + value.EndDate + '</p>' +
+                                '<p>Text: ' + value.Text + '</p></a></li>'));
+                        });
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            }
+
+            // update notification count
+            function updateNotificationCount() {
+                var count = 0;
+                $.ajax({
+                    type: 'GET',
+                    url: '/Notification/GetNotificationCount',
+                    success: function (response) {
+                        count = response;
+                        console.log(count);
+                        $('#notiCount').html(count);
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            }
+
+
+        });
+    </script>
+</body>
+</html>

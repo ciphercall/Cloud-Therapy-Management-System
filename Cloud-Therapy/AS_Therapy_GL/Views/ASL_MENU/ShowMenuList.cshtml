@@ -1,0 +1,87 @@
+﻿@model IEnumerable<AS_Therapy_GL.Models.ASL_MENU>
+
+@{
+    ViewBag.Title = "ShowMenuList";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+    
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+
+    if (LoggedUserTp == "AslSuperadmin" && LoggedUserStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+}
+
+
+<div id="contentHeaderBox">
+    <h1>Menu List</h1>
+</div>
+<br />
+<div class="col-md-12">
+    <div class="panel panel-info">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <tr>
+                    @*<th>
+                        @Html.DisplayNameFor(model => model.MODULEID)
+                    </th>*@
+                    <th>
+                        @Html.DisplayNameFor(model => model.MENUTP)
+                    </th>
+                    @*<th>
+                        @Html.DisplayNameFor(model => model.MENUID)
+                    </th>*@
+                    <th>
+                        @Html.DisplayNameFor(model => model.MENUNM)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.ACTIONNAME)
+                    </th>
+                    <th>
+                        @Html.DisplayNameFor(model => model.CONTROLLERNAME)
+                    </th>
+                </tr>
+
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        @*<td>
+                            @Html.DisplayFor(modelItem => item.MODULEID)
+                        </td>*@
+                        <td>
+                            @Html.DisplayFor(modelItem => item.MENUTP)
+                        </td>
+                        @*<td>
+                            @Html.DisplayFor(modelItem => item.MENUID)
+                        </td>*@
+                        <td>
+                            @Html.DisplayFor(modelItem => item.MENUNM)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.ACTIONNAME)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.CONTROLLERNAME)
+                        </td>
+                    </tr>
+                }
+
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+

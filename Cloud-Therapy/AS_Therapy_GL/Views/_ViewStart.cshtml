@@ -1,0 +1,13 @@
+﻿@{
+    //Layout = "~/Views/Shared/_Layout.cshtml";
+
+    if (Session["HomePage"] != null)
+    {
+        Layout = "~/Views/Shared/_HomePageLayout.cshtml";
+        Session["HomePage"] = null;
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+}

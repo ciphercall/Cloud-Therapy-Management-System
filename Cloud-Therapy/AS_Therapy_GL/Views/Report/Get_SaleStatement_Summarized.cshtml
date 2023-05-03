@@ -1,0 +1,278 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using System.Data.SqlTypes
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+@{
+    ViewBag.Title = "Get_SaleStatement_Summarized";
+    Layout = null;
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    var companyId = Convert.ToInt64(Model.pst_Trans.COMPID);
+
+    string companyName = "", address = "", contactNo = "";
+    var re = from m in db.AslCompanyDbSet where m.COMPID == companyId select new { m.COMPNM, m.ADDRESS, m.CONTACTNO };
+    foreach (var n in re)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    DateTime fdate = Convert.ToDateTime(Model.Report_FromDate);
+    string ddt = fdate.ToString("dd-MMM-yyyy");
+    var fromdate = ddt;
+
+    DateTime tDate = Convert.ToDateTime(Model.Report_ToDate);
+    string tdd = tDate.ToString("dd-MMM-yyyy");
+    var todate = tdd;
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+</head>
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="10%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+
+                </tr>
+                <tr style="background-color: #00689b">
+                    <td colspan="12">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<br />  @contactno</p>
+                    </td>
+
+                    <td colspan="6" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>
+                <tr>
+                    <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Sale Statement Summarized</td>
+                    <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="9" style="padding:4px;font-weight:bold">From Date : <span style="font-weight: bold">@fromdate</span></td>
+                    <td colspan="9" style="font-weight: bold"> To Date : <span style="font-weight:bold">@todate</span></td>
+                </tr>
+
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Memo No</td>
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Patient ID</td>
+                    <td colspan="3" style="color: white; padding: 4px" align="center">Patient Name</td>
+                    <td colspan="3" style="color: white; padding: 4px" align="center">Refer name</td>
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Amount</td>
+                    <td colspan="1" style="color: white; padding: 4px" align="center">Discount</td>
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Net</td>
+                    <td colspan="2" style="color: white; padding: 4px" align="center">Cash</td>
+                    <td colspan="1" style="color: white; padding: 4px" align="center">Credit</td>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    Decimal TOTALNET = 0, TOTALCASH = 0, TOTALCREDIT = 0;
+                }
+                @{
+
+
+                    System.Data.SqlClient.SqlConnection conn1 = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+                    string query1 = string.Format(
+                        "SELECT DISTINCT TRANSDT FROM PST_TRANSMST " +
+    "INNER JOIN PST_PATIENT ON PST_PATIENT.COMPID = PST_TRANSMST.COMPID AND PST_PATIENT.PATIENTID = PST_TRANSMST.PATIENTID " +
+    "INNER JOIN PST_REFER   ON PST_REFER.COMPID   = PST_TRANSMST.COMPID AND PST_REFER.REFERID = PST_PATIENT.REFERID " +
+    "WHERE PST_TRANSMST.COMPID = '{0}' AND TRANSDT BETWEEN '{1}'  AND '{2}' " +
+    "GROUP BY TRANSDT, TRANSNO, PATIENTIDM, PATIENTNM, REFERNM " +
+    "ORDER BY TRANSDT ",
+                        companyId, fdate, todate);
+                    System.Data.SqlClient.SqlCommand cmd1 = new System.Data.SqlClient.SqlCommand(query1, conn1);
+                    conn1.Open();
+                    SqlDataAdapter da1 = new SqlDataAdapter(cmd1);
+                    DataTable ds1 = new DataTable();
+                    da1.Fill(ds1);
+
+                    DateTime transDate1;
+                    foreach (DataRow row1 in ds1.Rows)
+                    {
+                        transDate1 = Convert.ToDateTime(row1["TRANSDT"]);
+
+                        System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+                        string query = string.Format(
+                              "SELECT TRANSDT, TRANSNO, PATIENTIDM, PATIENTNM, REFERNM, SUM(TOTAMT) TOTAMT,  SUM(DISCOUNT) DISCOUNT,  SUM(TOTNET) TOTNET,  SUM(AMTCASH) AMTCASH, " +
+    "SUM(AMTCREDIT) AMTCREDIT  FROM PST_TRANSMST " +
+    "INNER JOIN PST_PATIENT ON PST_PATIENT.COMPID = PST_TRANSMST.COMPID AND PST_PATIENT.PATIENTID = PST_TRANSMST.PATIENTID " +
+    "INNER JOIN PST_REFER   ON PST_REFER.COMPID   = PST_TRANSMST.COMPID AND PST_REFER.REFERID = PST_PATIENT.REFERID " +
+    "WHERE PST_TRANSMST.COMPID = '{0}' AND TRANSDT BETWEEN '{1}'  AND '{2}' " +
+    "GROUP BY TRANSDT, TRANSNO, PATIENTIDM, PATIENTNM, REFERNM " +
+    "ORDER BY TRANSDT, TRANSNO",
+                            companyId, fdate, todate);
+                        System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn);
+                        conn.Open();
+                        SqlDataAdapter da = new SqlDataAdapter(cmd);
+                        DataTable ds = new DataTable();
+                        da.Fill(ds);
+
+                        Int64 transno = 0, patientIDM = 0;
+                        string referName = "", Patientname = "";
+                        Decimal TotalAmount = 0, Discount = 0, TotalNet = 0, Cash = 0, Credit = 0;
+
+                        DateTime transDate2;
+                        foreach (DataRow row in ds.Rows)
+                        {
+                            transDate2 = Convert.ToDateTime(row["TRANSDT"]);
+
+                            if (transDate1 == transDate2)
+                            {
+
+                                string date = transDate2.ToString("dd-MMM-yyyy");
+                                <tr>
+                                    <td><br /></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" align="left" style="font-weight:bold">
+                                        Transaction Date:
+                                    </td>
+                                    <td colspan="15" align="left" style="font-weight:bold">
+                                        @date
+                                    </td>
+                                </tr>
+                                break;
+                            }
+
+                        }
+
+
+                        foreach (DataRow row in ds.Rows)
+                        {
+                            transDate2 = Convert.ToDateTime(row["TRANSDT"]);
+
+                            if (transDate1 == transDate2)
+                            {
+                                transno = Convert.ToInt64(row["TRANSNO"]);
+                                patientIDM = Convert.ToInt64(row["PATIENTIDM"]);
+                                Patientname = Convert.ToString(row["PATIENTNM"]);
+                                referName = Convert.ToString(row["REFERNM"]);
+                                TotalAmount = Convert.ToInt64(row["TOTAMT"]);
+                                Discount = Convert.ToInt64(row["DISCOUNT"]);
+                                TotalNet = Convert.ToInt64(row["TOTNET"]);
+                                Cash = Convert.ToInt64(row["AMTCASH"]);
+                                Credit = Convert.ToInt64(row["AMTCREDIT"]);
+                                <tr style="outline:thin solid">
+                                    <td align="center" colspan="2">
+                                        @transno
+                                    </td>
+                                    <td align="center" colspan="2">
+                                        @patientIDM
+                                    </td>
+                                    <td align="center" colspan="3">
+                                        @Patientname
+                                    </td>
+                                    <td align="center" colspan="3">
+                                        @referName
+                                    </td>
+                                    <td align="right" colspan="2">
+                                        @TotalAmount
+                                    </td>
+                                    <td align="right" colspan="1">
+                                        @Discount
+                                    </td>
+                                    <td align="right" colspan="2">
+                                        @TotalNet
+                                    </td>
+                                    <td align="right" colspan="2">
+                                        @Cash
+                                    </td>
+                                    <td align="right" colspan="1">
+                                        @Credit
+                                    </td>
+                                </tr>
+
+                                TOTALNET = TOTALNET + TotalNet;
+                                TOTALCASH = TOTALCASH + Cash;
+                                TOTALCREDIT = TOTALCREDIT + Credit;
+                            }
+                        }
+                        conn.Close();
+                    }
+                    conn1.Close();
+
+                }
+                <tr>
+                    <td colspan="2"></td>
+                    <td colspan="2"></td>
+                    <td colspan="3"></td>
+                    <td colspan="3"></td>
+                    <td colspan="2"></td>
+                    <td align="right" colspan="1" style="font-weight:bold">
+                        Total:
+                    </td>
+                    <td align="right" colspan="2" style="font-weight:bold">
+                        @TOTALNET
+                    </td>
+                    <td align="right" colspan="2" style="font-weight:bold">
+                        @TOTALCASH
+                    </td>
+                    <td align="right" colspan="1" style="font-weight:bold">
+                        @TOTALCREDIT
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
+

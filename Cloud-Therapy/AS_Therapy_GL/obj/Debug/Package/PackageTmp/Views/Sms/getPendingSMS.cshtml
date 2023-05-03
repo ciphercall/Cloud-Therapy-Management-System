@@ -1,0 +1,260 @@
+﻿@using AS_Therapy_GL.Models
+@using AS_Therapy_GL.Models.ASL
+@model AS_Therapy_GL.Models.DTO.PendingMailSmsDTO
+@{
+    ViewBag.Title = "getPendingSMS";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Int64 LoggedCompId = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"].ToString());
+    Int64 LoggedUserId = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+    var permission_Check = from m in db.AslRoleDbSet where m.COMPID == LoggedCompId && m.USERID == LoggedUserId && m.CONTROLLERNAME == "sms" select m;
+    var Status = "";
+    foreach (var check in permission_Check)
+    {
+        Status = check.STATUS;
+    }
+
+
+    if (Status == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+}
+
+
+
+<link href="~/Content/bootstrap%20datepicker%20css/datepicker.css" rel="stylesheet" />
+<link href="~/Content/bootstrap%20datepicker%20css/datepicker3.css" rel="stylesheet" />
+<script src="~/Scripts/bootstrap-datepicker.js"></script>
+
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.COMPID, htmlAttributes: new { @Value = LoggedCompId })
+    @Html.HiddenFor(model => model.UPDUSERID, new { @Value = LoggedUserId })
+
+    <div id="contentHeaderBox">
+        @if (ViewBag.PendingSMSMessage != null)
+        {
+            <h1 style="padding-left: 16px;">Pending SMS <span style="color: red; padding-left: 70px;">@ViewBag.PendingSMSMessage</span> </h1>
+        }
+        else
+        {
+            <h1 style="padding-left:16px">Pending SMS</h1>
+        }
+
+        <div class="btn-group pull-right" id="editOption">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                <i class="fa fa-cog"></i>
+            </button>
+            <ul class="dropdown-menu pull-right" style="" role="menu">
+                <li>
+                    <a href="@Url.Action("Index", "Sms")"><i class="fa fa-file-text"></i> Sending SMS</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <br />
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-1">
+                    @Html.Label("name", "Date: ", htmlAttributes: new { @class = "control-label", })
+                </div>
+                <div class="col-md-2">
+                    @Html.TextBoxFor(model => model.TRANSDT, htmlAttributes: new
+                    {
+                        @class = "form-control  input-sm",
+                        id = "txtTransDate", @*@Value = currentDateTime.ToString("dd-MMM-yyyy")*@ })
+                    @Html.ValidationMessageFor(model => model.TRANSDT, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-2 text-right" style="font-size: 20px">
+                    @Html.Label("name", "Credit: ", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3 text-left" style="font-size: 20px">
+                    <label>@TempData["CheckSMSQuantity"] </label>
+                </div>
+                @if (ViewData["PendingList_SMS"] != null)
+                {
+                    <div class="col-md-2"></div>
+                    <div class="col-md-2">
+                        <input type="submit" class="btn btn-primary btn-block" value="Send" name="command" id="btnSending" style="float: right" data-loading-text="Sending...." />
+                    </div>
+                }
+                <input type="submit" class="btn btn-primary btn-block" value="Search" name="command" id="btnSearch" />
+            </div>
+
+
+            @if (ViewData["PendingList_SMS"] != null)
+            {
+                @*<br />
+                    <div class="row">
+                        <div class="col-md-2">
+                            <input type="submit" class="btn btn-primary btn-block" value="Send" name="command" id="btnSending" style="float: right" data-loading-text="Sending...." />
+                        </div>
+                    </div>*@
+
+
+                List<ASL_PSMS> pendingList = new List<ASL_PSMS>();
+                pendingList = (List<ASL_PSMS>)ViewData["PendingList_SMS"];
+                Int64 count = 0;
+                <br />
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="panel panel-danger">
+                            <div class="panel-heading">Pending list </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <tr>
+                                        <th>
+                                            Serial
+                                        </th>
+                                        <th>
+                                            Mobile No
+                                        </th>
+                                        <th>
+                                            Message
+                                        </th>
+                                        <th>
+                                            Status
+                                        </th>
+                                    </tr>
+
+                                    @foreach (var item in pendingList)
+                                    {
+                                        count++;
+                                        <tr>
+                                            <td>
+                                                @count
+                                            </td>
+                                            <td>
+                                                @item.MOBNO
+                                            </td>
+                                            <td>
+                                                @item.MESSAGE
+                                            </td>
+                                            <td>
+                                                @item.STATUS
+                                            </td>
+                                        </tr>
+                                    }
+
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @Html.TextBoxFor(model => model.UPDLTUDE, new { id = "latlon", style = "display: none;" })
+            <input id="lat" type="hidden" />
+            <input id="lon" type="hidden" />
+        </div>
+    </div>
+
+
+
+    //Latitute & longitude
+    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script language="javascript" type="text/javascript">
+        $(function () {
+            navigator.geolocation.getCurrentPosition(showPosition);
+            //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+            function showPosition(position) {
+                var coordinates = position.coords;
+                $("#lat").val(coordinates.latitude);
+                $("#lon").val(coordinates.longitude);
+
+                $("#latlon").val(
+                    $("#lat").val() + "," + $("#lon").val()
+                );
+            }
+        });
+    </script>
+
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+
+            $('#btnSearch').bind("keyup keypress", function (e) { // Enter button disable when push the enter button in TextBox
+                var code = e.keyCode || e.which;
+                if (code == 13) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+
+
+            $('#btnSearch').hide();
+
+
+            $('#txtTransDate').datepicker({
+                format: "dd-M-yyyy",
+                autoclose: true,
+                todayHighlight: true,
+                showOnFocus: true,
+                //format: "yyyy-M-dd"
+            }).on('show', function (e) {
+                if (e.date) {
+                    $(this).data('stickyDate', e.date);
+                } else {
+                    $(this).data('stickyDate', null);
+                }
+            }).on('hide', function (e) {
+                var stickyDate = $(this).data('stickyDate');
+
+                if (!e.date && stickyDate) {
+                    $(this).datepicker('setDate', stickyDate);
+                    $(this).data('stickyDate', null);
+                }
+                $('#btnSearch').click();
+            });
+
+
+            $('.btn').on('click', function () {
+                var $this = $(this);
+                $this.button('loading');
+                setTimeout(function () {
+                    $this.button('reset');
+                }, 8000);
+            });
+        });
+    </script>
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

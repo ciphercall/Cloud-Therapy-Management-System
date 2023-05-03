@@ -1,0 +1,181 @@
+﻿@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PST_ITEM
+
+
+@{
+    ViewBag.Title = "GetItemList";
+    Layout = null;
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    Int64 companyID = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"].ToString());
+    Int64 loggedUserID = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+
+
+    var permission_Check = from m in db.AslRoleDbSet
+                           where m.COMPID == companyID && m.USERID == loggedUserID
+                               && m.CONTROLLERNAME == "Report" && m.ACTIONNAME == "GetItemList"
+                           select m;
+    var Status = "";
+    foreach (var check in permission_Check)
+    {
+        Status = check.STATUS;
+    }
+
+    if (Status == "A")
+    {
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+
+
+
+
+    Int64 minCategoryId = Convert.ToInt64((from n in db.PST_ItemmstDbSet where companyID == n.COMPID select n.CATID).Min());
+    Int64 maxCategoryId = Convert.ToInt64((from n in db.PST_ItemmstDbSet where companyID == n.COMPID select n.CATID).Max());
+
+    string companyName = "";
+    var comp = from n in db.AslCompanyDbSet
+               where n.COMPID == companyID
+               select new { companyName = n.COMPNM };
+
+    foreach (var n in comp)
+    {
+        companyName = n.companyName;
+    }
+
+    var compNm = companyName;
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+</head>
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="10%"></td>
+                    <td width="20%"></td>
+
+                </tr>
+                <tr style="background-color: #00689b">
+                    <td colspan="7">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                    </td>
+
+                    <td colspan="2" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>
+
+                <tr>
+                    <td colspan="7" align="left" style="padding: 4px; font-weight: bold">Listed Items</td>
+                    <td align="right" colspan="2" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                @*<tr style="outline: thin solid">
+                        <td colspan="5" style="padding:4px"> <span style="font-weight: bold"></span></td>
+
+                        <td colspan="1" align="right"></td>
+                        <td colspan="1" style="font-weight: bold"></td>
+                        <td colspan="1" align="right"></td>
+                        <td colspan="1" style="font-weight: bold"></td>
+
+                    </tr>*@
+
+
+            </thead>
+            <tbody>
+                @for (Int64 i = minCategoryId; i <= maxCategoryId; i++)
+                {
+                    string categoryName = "";
+                    Int64 categoryId = 0;
+                    var CategoryInfo = from n in db.PST_ItemmstDbSet
+                                       where n.COMPID == companyID && n.CATID == i
+                                       select new { catName = n.CATNM, catId = n.CATID };
+
+                    foreach (var n in CategoryInfo)
+                    {
+                        categoryName = n.catName;
+                        categoryId = Convert.ToInt64(n.catId);
+                    }
+                    var categoryNM = categoryName;
+                    var categoryID = categoryId;
+
+                    List<PST_ITEM> rmsItems = new List<PST_ITEM>();
+                    rmsItems = db.PST_ItemDbSet.Where(e => e.COMPID == companyID && e.CATID == i).ToList();
+                    <tr>
+                        <td><br /></td>
+                    </tr>
+                    <tr>
+                        <td colspan="9" align="left" style="padding: 4px; font-weight: bold">@categoryNM</td>
+                    </tr>
+
+                    <tr style="background-color: #00689b; outline: thin solid">
+                        <td colspan="3" style="color: white; padding: 4px">Item Name</td>
+                        <td colspan="1" style="color: white; padding: 4px">Unit</td>
+                        <td colspan="2" style="color: white; padding: 4px">Rate</td>
+                        <td colspan="3" style="color: white; padding: 4px">Remarks</td>
+
+                    </tr>
+                    foreach (var item in rmsItems)
+                    {
+                        <tr>
+                            <td colspan="3" style="padding:4px">
+                                @Html.DisplayFor(modelItem => item.ITEMNM)
+                            </td>
+                            <td colspan="1" align="center" style="padding:4px">
+                                @Html.DisplayFor(modelItem => item.UNIT)
+                            </td>
+                            <td colspan="2" align="right" style="padding:4px">
+                                @Html.DisplayFor(modelItem => item.RATE)
+                            </td>
+                            <td colspan="3" align="left" style="padding:4px">
+                                @Html.DisplayFor(modelItem => item.REMARKS)
+                            </td>
+                        </tr>
+                    }
+                }
+
+
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

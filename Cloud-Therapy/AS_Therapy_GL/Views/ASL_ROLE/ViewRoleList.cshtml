@@ -1,0 +1,139 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.CompanyModel
+
+
+@{
+    ViewBag.Title = "ViewRoleList";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+
+    if (LoggedUserTp == "AslSuperadmin" && LoggedUserStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+
+
+    //Company Name: [ ] , Company Name Field loaded in DropdownList
+    List<SelectListItem> aslCompanyName = new List<SelectListItem>();
+    var result = (from n in db.AslCompanyDbSet
+                  select n).ToList();
+
+    foreach (var n in result)
+    {
+        AslCompany aslCompany = db.AslCompanyDbSet.FirstOrDefault(e => e.COMPID == n.COMPID);
+        aslCompanyName.Add(new SelectListItem { Text = aslCompany.COMPNM, Value = aslCompany.COMPID.ToString() });
+    }
+}
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(false)
+
+    @Html.HiddenFor(model => model.AslUsercoModel.USERID, new { id = "txtUserID" })
+    <div id="contentHeaderBox">
+        <h1 style="padding-left: 16px;">Show Role Information</h1>
+    </div>
+    <br />
+
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-4">
+                    @Html.Label("name", "Search Company Name: ")
+                </div>
+                <div class="col-md-8">
+                    @Html.DropDownListFor(model => model.AslCompanyModel.COMPID, aslCompanyName, "Select Company Name", htmlAttributes: new { id = "ddlDropCompanyID", @class = "form-control", autofocus = true })
+                </div>
+            </div>
+            <br />
+
+            <div class="row">
+                <div class="col-md-4">
+                    @Html.Label("name", "Search User Name: ")
+                </div>
+                <div class="col-md-8">
+                    @Html.DropDownListFor(model => model.AslUsercoModel.USERID, Enumerable.Empty<SelectListItem>(), "Select user name", htmlAttributes: new { id = "ddlDropUserNameID", @class = "form-control" })
+                </div>
+            </div>
+        </div>
+
+        <div id="result-Table">
+            @Html.Partial("~/Views/ASL_ROLE/_RoleInfo.cshtml")
+        </div>
+
+    </div>
+    //Auto complete
+    <script language="javascript" type="text/javascript">
+
+        $(function () {
+            $('#ddlDropCompanyID').change(function () {
+                var changedDropDown = $('#ddlDropCompanyID option:selected').val();
+                $.getJSON('/ASL_ROLE/ComapnyNameChanged', { "ChangedDropDown": changedDropDown },
+                    function (result) {
+                        var ddl = $('#ddlDropUserNameID');
+                        ddl.empty();
+                        $("#ddlDropUserNameID").append('<option value="'
+                            + "select" + '">'
+                            + "select" + '</option>');
+                        $(result).each(function () {
+                            $(document.createElement('option'))
+                                .attr('value', this.Value)
+                                .text(this.Text)
+                                .appendTo(ddl);
+                        });
+                    });
+            });
+
+        });
+
+
+
+
+
+
+        $('#ddlDropUserNameID').change(function () {
+
+            var changedDropDown = $('#ddlDropUserNameID option:selected').val();
+            var userId = document.getElementById('txtUserID');
+
+            $.getJSON(
+                "/ASL_ROLE/GetUserName", { "ChangedDropDown": changedDropDown },
+
+                function (myData) {
+                    userId.value = myData;
+                    var id = userId.value;
+                    //Load Partial view
+                    $('#result-Table').load('@Url.Action("RoleInfo")', { userID: id });
+                });
+        });
+
+    </script>
+
+}
+
+
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-1.9.1.min.js"></script>
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+
+
+
+
+
+

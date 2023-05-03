@@ -1,0 +1,486 @@
+﻿@using System.Web.UI.WebControls
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+@{
+    ViewBag.Title = "Index";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    var LoggedCompId = HttpContext.Current.Session["loggedCompID"].ToString();
+
+
+    Int64 comid = Convert.ToInt64(LoggedCompId);
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+}
+
+@*<link href="~/Content/bootstrap-datepicker-css/datepicker.css" rel="stylesheet" />
+    <link href="~/Content/bootstrap-datepicker-css/datepicker3.css" rel="stylesheet" />
+
+    <script src="~/Scripts/bootstrap-datepicker.js"></script>*@
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+
+    @Html.HiddenFor(model => model.AGlMaster.COMPID, new { id = "txtCompId", @Value = LoggedCompId })
+    @Html.HiddenFor(model => model.AGlMaster.DEBITCD, new { id = "txtAccountcd", @Value = TempData["debitcd"] })
+
+
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Closing Balance Entry</h1>
+    </div>
+    <br />
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+
+                <div class="col-md-1">
+                    @Html.Label("Date", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-4">
+                    @if (TempData["TRANSDT"] != null)
+                    {
+                        @Html.TextBoxFor(model => model.AGlMaster.TRANSDT, new { @class = "form-control", id = "idTransDT", @Value = TempData["TRANSDT"] })
+                    }
+                    else
+                    {
+                        @Html.TextBoxFor(model => model.AGlMaster.TRANSDT, new { @class = "form-control", id = "idTransDT", @Value = currentDateTime.ToString("dd-MMM-yyyy") })
+                    }
+                    @Html.ValidationMessageFor(model => model.AGlMaster.TRANSDT, "", new { @class = "text-danger" })
+                </div>
+
+                @Html.TextBoxFor(model => model.AGlMaster.INSLTUDE, new { id = "latlonPos", style = "display: none;" })
+
+                <input id="lat" type="hidden" />
+                <input id="lon" type="hidden" />
+
+
+
+                <div class="col-md-3">
+                    <input id="SubmitId" type="submit" class="btn btn-info" value="Submit" name="command" />
+                </div>
+                <div class="col-md-4">
+                    @if (TempData["Not_Possible"] != null)
+                    {
+                        @*<div class="text-center">*@
+
+                        <h5 style="color: #BD7F1C">  Closing Balance has already entered</h5>
+
+                        @*</div>*@
+                        <br />
+                    }
+                    else if (TempData["message"] == null)
+                    {
+                        @*<div class="text-center">*@
+                        <h5 style="color: #BD7F1C"> </h5>
+
+                        @*</div>*@
+                        <br />
+                    }
+                    else if (TempData["message"] != null)
+                    {
+                        @*<div class="text-center">*@
+
+                        <h4 style="color: #BD7F1C">  @TempData["message"]</h4>
+
+                        @*</div>*@
+                        <br />
+                    }
+                </div>
+
+
+            </div>
+        </div>
+
+
+        <div>
+            <hr />
+        </div>
+    </div>
+    <div class="col-md-12">
+        <div class="row" id="middle">
+            @*@if (TempData["TRANSDT"] != null && TempData["message"]!="not possible")
+                {*@
+
+            @if (TempData["message"] != null && TempData["TRANSDT"] != null)
+            {
+                var accountcd = Convert.ToInt64(TempData["debitcd"]);
+
+                var accountcode = (from n in db.GlAcchartDbSet where n.COMPID == comid && n.ACCOUNTCD == accountcd select new { n.ACCOUNTNM }).ToList();
+
+                @Html.HiddenFor(model => model.AGlMaster.COMPID, new { style = "width:3em;", @readonly = "readonly" })
+                @Html.HiddenFor(model => model.AGlMaster.TRANSDT, new { style = "width:3em;", @readonly = "readonly" })
+                @Html.HiddenFor(model => model.AGlMaster.TRANSTP, new { style = "width:3em;", @readonly = "readonly" })
+                @Html.HiddenFor(model => model.AGlMaster.GL_MasterID, new { style = "width:3em;", @readonly = "readonly" })
+                @Html.HiddenFor(model => model.AGlMaster.TRANSMY, new { style = "width:3em;", @readonly = "readonly" })
+                @Html.HiddenFor(model => model.AGlMaster.TRANSNO, new { style = "width:3em;", @readonly = "readonly" })
+                @Html.HiddenFor(model => model.AGlMaster.TRANSSL, new { style = "width:3em;", @readonly = "readonly" })
+                @*<div class="col-md-1">
+                        <span> <b>@Html.Label("name", "Serial", htmlAttributes: new { @class = "control-label" })</b></span>
+                        @Html.TextBoxFor(model => model.AGlMaster.TRANSSL, new { @class = "form-control input-sm", id = "txtExpNm" })
+                        @if (ViewBag.errorItemid != null)
+                        {
+                        <h6 style="color: #C03523">@ViewBag.errorItemid<i style="color: #C03523" class="fa fa-question-circle fa-1x"></i></h6>
+                        }
+                    </div>*@
+                <div class="col-md-5">
+                    <span> <b>@Html.Label("name", "Account Name", htmlAttributes: new { @class = "control-label" })</b></span>
+
+                    @if (accountcode.Count != 0)
+                    {
+                        foreach (var x in accountcode)
+                        {
+
+                            @Html.TextBoxFor(model => x.ACCOUNTNM, new { @class = "form-control input-sm", id = "txtAccountName" })
+
+                        }
+                    }
+                    else
+                    {
+                        @Html.TextBoxFor(model => model.AGL_acchart.ACCOUNTNM, new { @class = "form-control input-sm", id = "txtAccountName" })
+                    }
+
+                </div>
+                <div class="col-md-2">
+                    <span> <b>@Html.Label("name", "Debit Amount", htmlAttributes: new { @class = "control-label" })</b></span>
+                    @Html.TextBoxFor(model => model.AGlMaster.DEBITAMT, new { @class = "form-control input-sm", id = "idDebitAmount" })
+                </div>
+                <div class="col-md-2">
+                    <span> <b>@Html.Label("name", "Credit Amount", htmlAttributes: new { @class = "control-label" })</b></span>
+                    @Html.TextBoxFor(model => model.AGlMaster.CREDITAMT, new { @class = "form-control input-sm", id = "txtExpNm" })
+                </div>
+
+                @*<div class="col-md-1"></div>*@
+
+                if (TempData["ShowAddButton"] == null)
+                {
+                    <div class="col-md-2">
+
+                        <input type="submit" class="btn btn-info" value="Update" id="btnUpdate" name="command" style="margin-top: 20px; margin-left: 5px" />
+
+                    </div>
+                }
+
+                else
+                {
+                    <div class="col-md-2">
+                        <span></span>
+                        <input type="submit" class="btn btn-info" value="Add" id="btnAdd" name="command" style="margin-top: 20px; margin-left: 5px" />
+
+                    </div>
+                }
+
+
+
+
+            }
+
+        </div>
+
+        <br />
+
+        <div class="row">
+
+            @if (TempData["TRANSDT"] != null)
+            {
+                string TRANSDT = Convert.ToString(TempData["TRANSDT"]);
+                DateTime date1 = DateTime.Parse(TRANSDT);
+                var TransDT = Convert.ToDateTime(date1);
+
+                Int64 LogCompId = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"]);
+
+                var res = db.GlMasterDbSet.Where(d => d.TRANSDT == TransDT && d.COMPID == LogCompId);
+                var accountcode = (from n in db.GlAcchartDbSet where n.COMPID == comid select new { n.ACCOUNTCD, n.ACCOUNTNM }).ToList();
+
+                <div class="panel panel-primary">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            @{
+                decimal debitsum = 0, creditsum = 0;
+
+                            }
+                            <tr>
+                                @*
+                                    <td style="padding-left:16px">
+                                        <h6>TRANSSL</h6>
+                                    </td>*@
+                                <td style="padding-left:16px">
+                                    <h6>Account Name</h6>
+                                </td>
+                                <td>
+                                    <h6>Debit Amount</h6>
+                                </td>
+                                <td>
+                                    <h6>Credit Amount</h6>
+                                </td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+
+
+                            @foreach (var item in res)
+                            {
+                                <tr>
+                                    @Html.HiddenFor(model => model.AGlMaster.COMPID, new { style = "width:3em;", @readonly = "readonly" })
+                                    @Html.HiddenFor(model => model.AGlMaster.TRANSDT, new { style = "width:3em;", @readonly = "readonly" })
+                                    @Html.HiddenFor(model => model.AGlMaster.TRANSTP, new { style = "width:3em;", @readonly = "readonly" })
+                                    @Html.HiddenFor(model => model.AGlMaster.GL_MasterID, new { style = "width:3em;", @readonly = "readonly" })
+                                    @Html.HiddenFor(model => model.AGlMaster.TRANSSL, new { style = "width:3em;", @readonly = "readonly" })
+                                    @*
+                                        <td style="padding-left:16px">
+                                            @Html.DisplayFor(model => item.TRANSSL, new { style = "width:10em;", id = "txtExpNm", @readonly = "readonly" })
+                                        </td>*@
+                                    <td style="padding-left:16px">
+                                        @foreach (var x in accountcode)
+                                        {
+                                            if (x.ACCOUNTCD == item.DEBITCD)
+                                            {
+                                                @Html.DisplayFor(model => x.ACCOUNTNM, new { style = "width: 7em;", id = "txtRemarks" })
+                                            }
+                                        }
+                                    </td>
+
+                                    <td>
+                                        @Html.DisplayFor(model => item.DEBITAMT, new { style = "width: 7em;", id = "txtRemarks", @readonly = "readonly" })
+
+                                    </td>
+                                    <td>
+                                        @Html.DisplayFor(model => item.CREDITAMT, new { style = "width: 7em;", id = "txtRemarks", @readonly = "readonly" })
+
+                                    </td>
+
+                                    <td>
+                                        <span>
+                                            <a href="@Url.Action("editaccountupdate", new { id=item.GL_MasterID, cid=item.COMPID, type=item.TRANSTP, date=item.TRANSDT, serial=item.TRANSSL })" class="btn btn-sm btn-info">
+                                                <span class="glyphicon glyphicon-pencil"></span>
+                                            </a>
+                                        </span>
+
+
+                                    </td>
+                                    <td>
+                                        <span>
+                                            <a href="@Url.Action("accountdelete", new { id=item.GL_MasterID, cid=item.COMPID, type=item.TRANSTP, date=item.TRANSDT, serial=item.TRANSSL })" class="btn btn-sm btn-danger">
+                                                <span class="glyphicon glyphicon-remove"></span>
+                                            </a>
+                                        </span>
+
+                                    </td>
+
+                                </tr>
+                                        debitsum = Convert.ToDecimal(debitsum + item.DEBITAMT);
+                                        creditsum = Convert.ToDecimal(creditsum + item.CREDITAMT);
+                            }
+                            @{
+                            var dd = debitsum;
+                            var cc = creditsum;
+                            }
+                            <tr>
+
+                                <td style="text-align: right">Total :</td>
+                                <td>@debitsum</td>
+                                <td>@creditsum</td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+
+
+
+
+                        </table>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped"></table>
+                </div>
+            }
+        </div>
+    </div>
+
+
+
+
+            //Latitute & longitude
+            <script src="http://maps.google.com/maps/api/js?sensor=false">
+            </script>
+
+            <script language="javascript" type="text/javascript">
+                $(function () {
+                    navigator.geolocation.getCurrentPosition(showPosition);
+                    //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+                    function showPosition(position) {
+                        var coordinates = position.coords;
+                        $("#lat").val(coordinates.latitude);
+                        $("#lon").val(coordinates.longitude);
+
+                        $("#latlonPos").val(
+                            $("#lat").val() + "," + $("#lon").val()
+                        );
+                        $("#latlonRms").val(
+                            $("#lat").val() + "," + $("#lon").val()
+                        );
+                    }
+                });
+            </script>
+
+
+
+
+
+            <script type="text/javascript">
+
+                $(document).ready(function () {
+
+
+                    $("#idTransDT").datepicker({ dateFormat: 'dd-M-yy', changeYear: true });
+
+
+
+                    $('#txtAccountName').autocomplete(
+                    {
+                        source: '@Url.Action("TagSearch", "ClosingBalance")',
+                        change: txtOneChanged,
+                        select: function (event, ui) {
+                            $("#txtAccountName").val(ui.item.label);
+                            txtOneChanged();
+                        },
+
+                    });
+
+
+                    function txtOneChanged() {
+                        var changedText = $("#txtAccountName").val();
+                        var txtBox = document.getElementById('txtAccountcd');
+                        $.getJSON(
+                            '/ClosingBalance/ItemNameChanged', { "ChangedText": changedText },
+                            function (result) {
+                                txtBox.value = result.debitcd;
+
+                                document.getElementById("idDebitAmount").focus();
+                            });
+                    }
+
+
+
+                    //$("#idTransDT").change(function () {
+                    //    location.reload();
+                    //});
+
+                    $("#btnAdd").click(function () {
+                        // var changedText = $('#txtAccountName').val();
+                        var txtBox = document.getElementById('txtAccountName');
+                        txtBox.value = "";
+                    });
+
+
+
+                });
+
+
+
+            </script>
+
+
+
+
+
+
+
+            <style type="text/css">
+                .ui-autocomplete {
+                    position: absolute;
+                    cursor: default;
+                    background: #f0ffff;
+                    max-height: 200px;
+                    overflow-y: auto;
+                    /* prevent horizontal scrollbar */
+                    overflow-x: hidden;
+                    /* add padding to account for vertical scrollbar */
+                    padding-right: 20px;
+                }
+
+
+                /*html .ui-autocomplete {
+                                    width: 1px;
+                                }
+
+                                .ui-menu {
+                                    list-style: none;
+                                    padding: 2px;
+                                    margin: 0;
+                                    display: block;
+                                    float: left;
+                                }
+
+                                    .ui-menu .ui-menu {
+                                        margin-top: -3px;
+                                    }
+
+                                    .ui-menu .ui-menu-item {
+                                        margin: 0;
+                                        padding: 0;
+                                        zoom: 1;
+                                        float: left;
+                                        clear: left;
+                                        width: 100%;
+                                    }
+
+                                        .ui-menu .ui-menu-item a {
+                                            text-decoration: none;
+                                            display: block;
+                                            padding: .2em .4em;
+                                            line-height: 1.5;
+                                            zoom: 1;
+                                        }
+
+                                            .ui-menu .ui-menu-item a.ui-state-hover,
+                                            .ui-menu .ui-menu-item a.ui-state-active {
+                                                font-weight: normal;
+                                                margin: -1px;
+                                            }*/
+            </style>
+}
+<link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+
+<script src="~/Scripts/jquery-ui-1.10.4.min.js"></script>
+
+
+
+
+
+
+
+

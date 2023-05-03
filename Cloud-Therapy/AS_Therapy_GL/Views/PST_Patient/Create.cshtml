@@ -1,0 +1,379 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using AS_Therapy_GL.Models
+@using System.Web.Optimization
+@model AS_Therapy_GL.Models.PST_PATIENT
+
+
+@{
+    ViewBag.Title = "Create";
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Int64 LoggedCompId = Convert.ToInt64(System.Web.HttpContext.Current.Session["loggedCompID"]);
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+
+    List<SelectListItem> genderList = new List<SelectListItem>();
+    genderList.Add(new SelectListItem { Text = "Male", Value = "MALE" });
+    genderList.Add(new SelectListItem { Text = "Female", Value = "FEMALE" });
+
+
+    List<SelectListItem> ReferNameList = new List<SelectListItem>();
+    var result = (from n in db.PST_ReferDbSet where n.COMPID == LoggedCompId select n).ToList();
+    foreach (var n in result)
+    {
+        ReferNameList.Add(new SelectListItem { Text = n.REFERNM, Value = n.REFERID.ToString() });
+    }
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+
+
+    string current_Year = Convert.ToString(currentDateTime.ToString("yyyy"));
+    string Year = Convert.ToString(current_Year.Substring(2, 2));
+    Int64 patientYear = Convert.ToInt64(current_Year);
+    Int64 PATIENTIDM = 0, PATIENTID = 0;
+
+    Int64 maxData = Convert.ToInt64((from n in db.PST_PatientDbSet where LoggedCompId == n.COMPID && n.PATIENTYY == patientYear select n.PATIENTIDM).Max());
+    Int64 R = Convert.ToInt64(Year + "9999");
+
+    if (maxData == 0)
+    {
+        PATIENTIDM = Convert.ToInt64(Year + "0001");
+        PATIENTID = Convert.ToInt64(LoggedCompId + "1" + PATIENTIDM);
+    }
+    else if (maxData < R)
+    {
+        PATIENTIDM = maxData + 1;
+        PATIENTID = Convert.ToInt64(LoggedCompId + "1" + PATIENTIDM);
+    }
+    else
+    {
+        PATIENTIDM = maxData + 1;
+        PATIENTID = Convert.ToInt64(LoggedCompId + "1" + PATIENTIDM);
+        TempData["PatientCreationMessage"] = "Not possible entry! ";
+    }
+
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.COMPID, new { @Value = LoggedCompId })
+    @Html.HiddenFor(model => model.PATIENTID, new { @Value = PATIENTID })
+    <div id="contentHeaderBox">
+        <h1 style="padding-left:16px">Create Patient Information</h1>
+        @if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A")
+        {
+            var createStatus = "";
+            var updateStatus = "";
+            var deleteStatus = "";
+            var status = "";
+            var loggedUserID = HttpContext.Current.Session["loggedUserID"].ToString();
+            System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+
+            string query1 = string.Format("SELECT STATUS, INSERTR, UPDATER, DELETER FROM ASL_ROLE WHERE  CONTROLLERNAME='PST_Patient' AND COMPID='{0}' AND USERID = '{1}'", LoggedCompId, loggedUserID);
+
+            System.Data.SqlClient.SqlCommand cmd1 = new System.Data.SqlClient.SqlCommand(query1, conn);
+            conn.Open();
+
+            SqlDataAdapter da1 = new SqlDataAdapter(cmd1);
+            DataTable ds1 = new DataTable();
+            da1.Fill(ds1);
+
+            foreach (DataRow row in ds1.Rows)
+            {
+                status = row["STATUS"].ToString();
+                createStatus = row["INSERTR"].ToString();
+                updateStatus = row["UPDATER"].ToString();
+                deleteStatus = row["DELETER"].ToString();
+            }
+            conn.Close();
+
+
+            if (createStatus == "A")
+            {
+
+            }
+            else if (updateStatus == "A")
+            {
+                Response.Redirect("~/PST_Patient/Update");
+            }
+            else if (deleteStatus == "A")
+            {
+                Response.Redirect("~/PST_Patient/Delete");
+            }
+
+            if (createStatus == "I")
+            {
+                Response.Redirect("~/GraphView/Index");
+            }
+
+            <div class="btn-group pull-right" id="editOption">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                    <i class="fa fa-cog"></i>
+                </button>
+                <ul class="dropdown-menu pull-right" style="" role="menu">
+                    @if (createStatus == 'A'.ToString() && updateStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "PST_Patient")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Update", "PST_Patient")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Delete", "PST_Patient")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (updateStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Update", "PST_Patient")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Delete", "PST_Patient")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString() && updateStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "PST_Patient")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Update", "PST_Patient")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString() && deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "PST_Patient")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Delete", "PST_Patient")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                    else if (createStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "PST_Patient")"><i class="fa fa-plus"></i> Create</a>
+                        </li>
+                    }
+                    else if (updateStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Update", "PST_Patient")"><i class="fa fa-edit"></i> Update</a>
+                        </li>
+                    }
+                    else if (deleteStatus == 'A'.ToString())
+                    {
+                        <li>
+                            <a href="@Url.Action("Delete", "PST_Patient")"><i class="fa fa-times"></i> Delete</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+        }
+
+    </div>
+
+    <div class="col-md-12">
+        @if (TempData["PatientCreationMessage"] != null)
+        {
+            <div class="panel-heading text-center">
+                <h4 style="color: #226699">@TempData["PatientCreationMessage"]</h4>
+            </div>
+        }
+
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "Date", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-2">
+                    @*patientDate datatype is 'DateTime'. So Firefox cannot work string to datetime auto coversion.so USERPC replace to PATIENTDT in this input field.*@
+                    @Html.TextBoxFor(model => model.USERPC, htmlAttributes: new { @class = "form-control", @Value = currentDateTime.ToString("dd-MMM-yyyy"), @readonly = "readonly" })
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("name", "Year", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-2">
+                    @Html.TextBoxFor(model => model.PATIENTYY, htmlAttributes: new { @class = "form-control", @Value = currentDateTime.ToString("yyyy"), @readonly = "readonly" })
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("name", "Patient ID", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-2">
+                    @Html.TextBoxFor(model => model.PATIENTIDM, htmlAttributes: new { @class = "form-control", @readonly = "readonly", @Value = PATIENTIDM })
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "Patient Name", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-10">
+                    @Html.TextBoxFor(model => model.PATIENTNM, htmlAttributes: new { @class = "form-control" ,autofocus =true})
+                    @Html.ValidationMessageFor(model => model.PATIENTNM, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "Address", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-10">
+                    @Html.TextBoxFor(model => model.ADDRESS, htmlAttributes: new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.ADDRESS, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "Gender", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-3">
+                    @Html.DropDownListFor(model => model.GENDER, genderList, "Select gender", htmlAttributes: new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.GENDER, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-1">
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("name", "Age", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-2">
+                    @Html.TextBoxFor(model => model.AGE, htmlAttributes: new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.AGE, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "Mobile Number 1", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-4">
+                    @Html.TextBoxFor(model => model.MOBNO1, htmlAttributes: new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.MOBNO1, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("name", "Mobile Number 2", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-4">
+                    @Html.TextBoxFor(model => model.MOBNO2, htmlAttributes: new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.MOBNO2, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "Email Id", htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-4">
+                    @Html.TextBoxFor(model => model.EMAILID, htmlAttributes: new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.EMAILID, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-md-2">
+                    @Html.Label("name", "Refer name", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-4">
+                    @Html.DropDownListFor(model => model.REFERID, ReferNameList, "-Select Refer Name-", htmlAttributes: new { @class = "form-control" })
+                </div>
+            </div>
+
+
+            <br />
+            <div class="row">
+                <div class="col-md-2">
+                    @Html.Label("name", "Remarks", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-10">
+                    @Html.TextAreaFor(model => model.REMARKS, htmlAttributes: new { @class = "form-control" })
+                </div>
+            </div>
+
+
+
+
+            @Html.TextBoxFor(model => model.INSLTUDE, new { id = "latlon", style = "display: none;" })
+            <input id="lat" type="hidden" />
+            <input id="lon" type="hidden" />
+
+
+            <br />
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-4">
+                    <input type="submit" class="btn btn-primary btn-block" value="Save" name="command" />
+                </div>
+                <div class="col-md-4">
+                    <input type="submit" class="btn btn-primary btn-block" value="Save & Create Billing" name="command" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    //Latitute & longitude
+    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+    <script language="javascript" type="text/javascript">
+        $(function () {
+            navigator.geolocation.getCurrentPosition(showPosition);
+            //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+            function showPosition(position) {
+                var coordinates = position.coords;
+                $("#lat").val(coordinates.latitude);
+                $("#lon").val(coordinates.longitude);
+
+                $("#latlon").val(
+                    $("#lat").val() + "," + $("#lon").val()
+                );
+            }
+        });
+    </script>
+
+
+
+}
+
+
+
+@section Scripts {
+    @*@Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/jqueryui")*@
+    @Scripts.Render("~/bundles/jqueryval")
+
+}

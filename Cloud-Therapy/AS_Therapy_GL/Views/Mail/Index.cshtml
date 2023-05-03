@@ -1,0 +1,280 @@
+﻿@using System.Web.Optimization
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.DTO.MailDTO
+@{
+    ViewBag.Title = "Index";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Int64 LoggedCompId = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"].ToString());
+    Int64 LoggedUserId = Convert.ToInt64(HttpContext.Current.Session["loggedUserID"].ToString());
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    List<SelectListItem> listOfGroupame = new List<SelectListItem>();
+    var result = (from n in db.UploadGroupDbSet
+                  where n.COMPID == LoggedCompId
+                  select n).ToList();
+
+    foreach (var n in result)
+    {
+        Int64 count = 0;
+        var totalEmail = (from m in db.UploadContactDbSet where n.COMPID == m.COMPID && m.GROUPID == n.GROUPID && m.EMAIL != null select m.EMAIL).ToList();
+        foreach (var c in totalEmail)
+        {
+            count++;
+        }
+        string groupNameWithCount = Convert.ToString(n.GROUPNM + " | " + count);
+        listOfGroupame.Add(new SelectListItem { Text = groupNameWithCount, Value = n.GROUPID.ToString() });
+    }
+
+
+    var permission_Check = from m in db.AslRoleDbSet where m.COMPID == LoggedCompId && m.USERID == LoggedUserId && m.CONTROLLERNAME == "mail" select m;
+    var Status = "";
+    foreach (var check in permission_Check)
+    {
+        Status = check.STATUS;
+    }
+
+
+    if (Status == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+}
+
+
+
+<!-- INSTRUCTIONS -->
+<!-- 2 CSS files are required: -->
+<!--   * Tag-it's base CSS (jquery.tagit.css). -->
+<!--   * Any theme CSS (either a jQuery UI theme such as "flick", or one that's bundled with Tag-it, e.g. tagit.ui-zendesk.css as in this example.) -->
+<!-- The base CSS and tagit.ui-zendesk.css theme are scoped to the Tag-it widget, so they shouldn't affect anything else in your site, unlike with jQuery UI themes. -->
+<link href="../../Content/tag-it-CSS/jquery.tagit.css" rel="stylesheet" />
+<link href="../../Content/tag-it-CSS/tagit.ui-zendesk.css" rel="stylesheet" />
+<!-- If you want the jQuery UI "flick" theme, you can use this instead, but it's not scoped to just Tag-it like tagit.ui-zendesk is: -->
+<!--   <link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/flick/jquery-ui.css"> -->
+<!-- jQuery and jQuery UI are required dependencies. -->
+<!-- Although we use jQuery 1.4 here, it's tested with the latest too (1.8.3 as of writing this.) -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
+
+<!-- The real deal -->
+@*<script src="~/Scripts/tag-it/tag-it.js"></script>*@
+<script src="../../Scripts/tag-it/tag-it.js"></script>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    @Html.HiddenFor(model => model.COMPID, htmlAttributes: new { @Value = LoggedCompId, id = "txtHiddenCompid" })
+    @Html.HiddenFor(model => model.INSUSERID, new { @Value = LoggedUserId })
+
+    <div id="contentHeaderBox">
+        @if (TempData["MailMessage"] != null)
+        {
+            <h1 style="padding-left: 16px;">Sending Email <span style="color: red; padding-left: 81px;">@TempData["MailMessage"]</span> </h1>
+        }
+        else if (ViewBag.MailMessage != null)
+        {
+            <h1 style="padding-left: 16px;">Sending Email <span style="color: red; padding-left: 70px;">@ViewBag.MailMessage</span> </h1>
+        }
+        else
+        {
+            <h1 style="padding-left:16px">Sending Email</h1>
+        }
+        <div class="btn-group pull-right" id="editOption">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" aria-expanded="false">
+                <i class="fa fa-cog"></i>
+            </button>
+            <ul class="dropdown-menu pull-right" style="" role="menu">
+                <li>
+                    <a href="@Url.Action("getPendingMail", "Mail")"><i class="fa fa-file-text"></i> Pending Email Info.</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <br />
+    <div class="col-md-12">
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Select Group: ", htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-4">
+                    @Html.DropDownListFor(model => model.GROUPID, listOfGroupame, "-Select Group Name-", new { @class = "form-control", id = "ddlGroupnameID", autofocus = true })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "To Email: ")
+                </div>
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.ToEmail, htmlAttributes: new { @class = "form-control", id = "myULTags" })
+                    @Html.ValidationMessageFor(model => model.ToEmail, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Subject: ")
+                </div>
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.Subject, htmlAttributes: new { @class = "form-control", })
+                    @Html.ValidationMessageFor(model => model.Subject, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Header and footer color: ")
+                </div>
+                <div class="col-md-8">
+                    @Html.RadioButtonFor(model => model.Color, "Black", htmlAttributes: new { @class = "radio-inline", @checked = "checked" }) Black
+                    @Html.RadioButtonFor(model => model.Color, "Red", htmlAttributes: new { @class = "radio-inline" }) Red
+                    @Html.RadioButtonFor(model => model.Color, "Green", htmlAttributes: new { @class = "radio-inline" }) Green
+                    @Html.RadioButtonFor(model => model.Color, "Blue", htmlAttributes: new { @class = "radio-inline", }) Blue
+
+                </div>
+                @*<label class="radio-inline">
+                        <input type="radio" name="optradio">Option 1
+                    </label>
+                    <label class="radio-inline">
+                        <input type="radio" name="optradio">Option 2
+                    </label>
+                    <label class="radio-inline">
+                        <input type="radio" name="optradio">Option 3
+                    </label>*@
+            </div>
+
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.Label("name", "Email Body: ")
+                </div>
+                <div class="col-md-8">
+                    @Html.TextAreaFor(model => model.Body, htmlAttributes: new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.Body, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-2">
+                    <input type="submit" class="btn btn-primary btn-block" value="Send" />
+                </div>
+            </div>
+
+
+
+            @Html.TextBoxFor(model => model.INSLTUDE, new { id = "latlon", style = "display: none;" })
+            <input id="lat" type="hidden" />
+            <input id="lon" type="hidden" />
+        </div>
+    </div>
+
+
+
+        //Latitute & longitude
+        <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+        <script language="javascript" type="text/javascript">
+            $(function () {
+                navigator.geolocation.getCurrentPosition(showPosition);
+                //navigator.geolocation.getCurrentPosition(showPosition, positionError);
+
+                function showPosition(position) {
+                    var coordinates = position.coords;
+                    $("#lat").val(coordinates.latitude);
+                    $("#lon").val(coordinates.longitude);
+
+                    $("#latlon").val(
+                        $("#lat").val() + "," + $("#lon").val()
+                    );
+                }
+            });
+        </script>
+
+
+
+
+
+        <script>
+            $(function () {
+                //-------------------------------
+                // Preloading data in markup
+                //-------------------------------
+                $('#myULTags').tagit({
+                    allowSpaces: true,
+                    minLength: 2,
+                    removeConfirmation: true,
+                    tagSource: function (request, response) {
+                        //console.log("1");
+                        $.ajax({
+                            url: '@Url.Action("TagSearch_tagit", "Mail")',
+                            data: {
+                                term: request.term,
+                                compid: $('#txtHiddenCompid').val()
+                            },
+                            dataType: "json",
+                            success: function (data) {
+                                response($.map(data, function (item) {
+                                    return {
+                                        label: item,
+                                        value: item
+                                    };
+                                }));
+                            }
+                        });
+                    }
+                });
+
+            });
+        </script>
+
+
+
+        <style type="text/css">
+            .ui-autocomplete {
+                position: absolute;
+                cursor: default;
+                background: #f0ffff;
+                max-height: 200px;
+                overflow-y: auto;
+                /* prevent horizontal scrollbar */
+                overflow-x: hidden;
+                /* add padding to account for vertical scrollbar */
+                padding-right: 20px;
+            }
+        </style>
+
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

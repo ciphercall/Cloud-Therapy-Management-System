@@ -1,0 +1,108 @@
+﻿@model AS_Therapy_GL.Models.PST_ITEMMST
+
+@{
+    ViewBag.Title = "DeleteCategory";
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+
+    @Html.HiddenFor(model => model.PST_ITEMMST_ID)
+    @Html.HiddenFor(model => model.COMPID)
+    @Html.HiddenFor(model => model.CATID)
+
+    <div id="contentHeaderBox">
+        <h1 style="padding-left: 16px;">Delete Category Information</h1>
+    </div>
+    <br />
+
+    <div class="col-md-12">
+        <div class="panel panel-primary" style="margin-bottom: 0px">
+            <div class="panel-heading">Are you sure you want to delete this Category Info?</div>
+        </div>
+        <br />
+
+        <div class="form-group">
+
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.CATNM, htmlAttributes: new { @class = "control-label" })
+                </div>
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.CATNM, htmlAttributes: new { @class = "form-control", data_val = false, @readonly = "readonly" ,autofocus = true})
+                </div>
+            </div>
+
+            <br />
+            <div class="row">
+                <div class="col-md-3">
+                    @Html.LabelFor(model => model.REMARKS, htmlAttributes: new { @class = "control-label" })
+                </div>
+
+                <div class="col-md-8">
+                    @Html.TextBoxFor(model => model.REMARKS, htmlAttributes: new { @class = "form-control", data_val = false, @readonly = "readonly" })
+                </div>
+            </div>
+
+
+
+            @Html.TextBoxFor(model => model.UPDLTUDE, new { id = "latlon", style = "display: none;" })
+            <input id="lat" type="hidden" />
+            <input id="lon" type="hidden" />
+            <br />
+            <br />
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-8">
+                    <input type="submit" class="btn btn-info" value="Yes" name="Command" />
+                    <input type="submit" class="btn btn-danger" value="No" name="Command" />
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+    //Latitute & longitude
+    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+    <script language="javascript" type="text/javascript">
+        $(function () {
+            navigator.geolocation.getCurrentPosition(showPosition);
+
+            function showPosition(position) {
+                var coordinates = position.coords;
+                $("#lat").val(coordinates.latitude);
+                $("#lon").val(coordinates.longitude);
+
+                $("#latlon").val(
+                    $("#lat").val() + "," + $("#lon").val()
+                );
+            }
+        });
+    </script>
+
+}
+

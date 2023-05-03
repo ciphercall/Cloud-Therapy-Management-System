@@ -1,0 +1,83 @@
+﻿@model IEnumerable<AS_Therapy_GL.Models.ASL_LOG>
+
+@{
+    ViewBag.Title = "_UserLogData";
+
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+    
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+    
+    if (LoggedUserTp == "CompanyAdmin" && LoggedUserStatus == "A" && LoggedCompanyStatus=="A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+}
+
+@if (Model != null)
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.Asl_LOGid)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.COMPID)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.USERID)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.LOGTYPE)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.LOGDATE)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.LOGTIME)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.LOGDATA)
+                </th>
+                <th></th>
+            </tr>
+
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Asl_LOGid)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.COMPID)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.USERID)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.LOGTYPE)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.LOGDATE)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.LOGTIME)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.LOGDATA)
+                    </td>
+                </tr>
+            }
+
+        </table>
+    </div>
+}

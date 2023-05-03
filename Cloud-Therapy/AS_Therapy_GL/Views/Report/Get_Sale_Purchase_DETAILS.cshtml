@@ -1,0 +1,304 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using System.Data.SqlTypes
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+@{
+    ViewBag.Title = "Get_Sale_Purchase_DETAILS";
+    Layout = null;
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    var companyId = Convert.ToInt64(Model.pst_Trans.COMPID);
+
+    string companyName = "", address = "", contactNo = "";
+    var re = from m in db.AslCompanyDbSet where m.COMPID == companyId select new { m.COMPNM, m.ADDRESS, m.CONTACTNO };
+    foreach (var n in re)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    DateTime fdate = Convert.ToDateTime(Model.Report_FromDate);
+    string ddt = fdate.ToString("dd-MMM-yyyy");
+    var fromdate = ddt;
+
+    DateTime tDate = Convert.ToDateTime(Model.Report_ToDate);
+    string tdd = tDate.ToString("dd-MMM-yyyy");
+    var todate = tdd;
+
+
+    var Type = Convert.ToString(Model.TRANSTP);
+
+    var Party_Supplier_ID = Convert.ToInt64(Model.AGL_acchart.ACCOUNTCD);
+    string Party_Supplier_Name = "";
+    var store_Name = (from n in db.GlAcchartDbSet where n.COMPID == companyId && n.ACCOUNTCD == Party_Supplier_ID select n).ToList();
+    foreach (var n in store_Name)
+    {
+        Party_Supplier_Name = n.ACCOUNTNM;
+    }
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+}
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+
+</head>
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="10%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+
+                </tr>
+                <tr style="background-color: #00689b">
+                    <td colspan="12">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<br />  @contactno</p>
+                    </td>
+
+                    <td colspan="6" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>
+                <tr>
+                    @if (Type == "BUY")
+                    {
+                        <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Purchase Details</td>
+                    }
+                    else if (Type == "SALE")
+                    {
+                        <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Sales Details</td>
+                    }
+                    <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="outline: thin solid">
+                    <td colspan="9" style="padding: 4px;font-weight: bold"> Transaction Type : <span style="font-weight:bold">@Type</span></td>
+                    @if (Type == "BUY")
+                    {
+                        <td colspan="9" style="font-weight:bold">Supplier Name : <span style="font-weight: bold">@Party_Supplier_Name</span></td>
+                    }
+                    else if (Type == "SALE")
+                    {
+                        <td colspan="9" style="font-weight:bold">Party Name : <span style="font-weight: bold">@Party_Supplier_Name</span></td>
+                    }
+                </tr>
+
+                <tr style="outline: thin solid">
+                    <td colspan="9" style="padding:4px;font-weight:bold">From Date : <span style="font-weight: bold">@fromdate</span></td>
+                    <td colspan="9" style="font-weight: bold"> To Date : <span style="font-weight:bold">@todate</span></td>
+                </tr>
+
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="6" style="color: white; padding: 4px" align="center">Item Name</td>
+                    <td colspan="3" style="color: white; padding: 4px" align="center">Qty</td>
+                    <td colspan="4" style="color: white; padding: 4px" align="center">Rate</td>
+                    <td colspan="5" style="color: white; padding: 4px" align="center">Amount</td>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    Decimal total_QTY = 0, total_RATE = 0, total_AMOUNT = 0, total_DISCAMT = 0, total_GROSSAMT = 0;
+                }
+                @{
+                    System.Data.SqlClient.SqlConnection conn1 = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+                    string query1 = string.Format(
+                        "SELECT TRANSNO, TRANSDT FROM(  " +
+    "SELECT TRANSNO, TRANSDT, ITEMID, QTY, RATE, AMOUNT FROM PST_TRANS " +
+    "WHERE PST_TRANS.COMPID='{0}'  AND TRANSTP = 'SALE' AND PATIENTID = '{2}' AND TRANSDT BETWEEN '{3}'  AND '{4}' AND TRANSTP = '{1}' " +
+    "UNION " +
+    "SELECT TRANSNO, TRANSDT, ITEMID, QTY, RATE, AMOUNT FROM PST_TRANS " +
+    "WHERE PST_TRANS.COMPID='{0}' AND  TRANSTP = 'BUY ' AND RSID = '{2}' AND TRANSDT BETWEEN '{3}'  AND '{4}' AND TRANSTP = '{1}' " +
+    ") A INNER JOIN PST_ITEM ON PST_ITEM.ITEMID = A.ITEMID " +
+    "GROUP BY TRANSNO, TRANSDT",
+                        companyId, Type, Party_Supplier_ID, fdate, todate);
+                    System.Data.SqlClient.SqlCommand cmd1 = new System.Data.SqlClient.SqlCommand(query1, conn1);
+                    conn1.Open();
+                    SqlDataAdapter da1 = new SqlDataAdapter(cmd1);
+                    DataTable ds1 = new DataTable();
+                    da1.Fill(ds1);
+                    string transdt = "", transdt_convertDate = "", transno = "", stornm = "";
+
+                    foreach (DataRow row1 in ds1.Rows)
+                    {
+                        transdt = row1["TRANSDT"].ToString();
+                        DateTime date = Convert.ToDateTime(transdt);
+                        transdt_convertDate = date.ToString("dd-MMM-yyyy");
+                        transno = row1["TRANSNO"].ToString();
+
+                        System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+                        string query = string.Format(
+                            "SELECT TRANSNO, TRANSDT, A.ITEMID, ITEMNM, QTY, A.RATE, AMOUNT FROM( " +
+    "SELECT TRANSNO, TRANSDT, ITEMID, QTY, RATE, AMOUNT FROM PST_TRANS " +
+    "WHERE PST_TRANS.COMPID='{0}'  AND TRANSTP = 'SALE' AND PATIENTID = '{2}' AND TRANSDT BETWEEN '{3}'  AND '{4}' AND TRANSTP = '{1}' " +
+    "UNION " +
+    "SELECT TRANSNO, TRANSDT, ITEMID, QTY, RATE, AMOUNT FROM PST_TRANS " +
+    "WHERE PST_TRANS.COMPID='{0}' AND  TRANSTP = 'BUY ' AND RSID = '{2}' AND TRANSDT BETWEEN '{3}'  AND '{4}' AND TRANSTP = '{1}' " +
+    ") A INNER JOIN PST_ITEM ON PST_ITEM.ITEMID = A.ITEMID",
+                            companyId, Type, Party_Supplier_ID, fdate, todate);
+                        System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand(query, conn);
+                        conn.Open();
+                        SqlDataAdapter da = new SqlDataAdapter(cmd);
+                        DataTable ds = new DataTable();
+                        da.Fill(ds);
+
+                        string TRANSDT = "", transdt_CONVERT = "", TRANSNO = "", STORENM = "", ITEMNM = "";
+                        Decimal QTY = 0, RATE = 0, AMOUNT = 0, DISCAMT = 0, GROSSAMT = 0;
+
+                        foreach (DataRow row in ds.Rows)
+                        {
+                            TRANSDT = row["TRANSDT"].ToString();
+                            DateTime date1 = Convert.ToDateTime(TRANSDT);
+                            transdt_CONVERT = date1.ToString("dd-MMM-yyyy");
+                            TRANSNO = row["TRANSNO"].ToString();
+                            if (transdt_convertDate == transdt_CONVERT && transno == TRANSNO)
+                            {
+
+                                <tr>
+                                    <td>
+                                        <br />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" align="Right" style="font-weight:bold">
+                                        Invoice No:
+                                    </td>
+                                    <td colspan="3" align="left" style="font-weight:bold">
+                                        @TRANSNO
+                                    </td>
+                                    <td colspan="1" align="Right" style="font-weight:bold">
+                                        Date:
+                                    </td>
+                                    <td colspan="3" align="left" style="font-weight:bold">
+                                        @transdt_CONVERT
+                                    </td>
+                                    @*<td colspan="4" align="Right" style="font-weight:bold">
+                                        Store Name:
+                                    </td>
+                                    <td colspan="5" align="left" style="font-weight:bold">
+                                        @STORENM
+                                    </td>*@
+                                </tr>
+                                break;
+                            }
+
+                        }
+
+
+                        foreach (DataRow row in ds.Rows)
+                        {
+
+                            TRANSDT = row["TRANSDT"].ToString();
+                            DateTime date1 = Convert.ToDateTime(TRANSDT);
+                            transdt_CONVERT = date1.ToString("dd-MMM-yyyy");
+                            TRANSNO = row["TRANSNO"].ToString();
+                            if (transdt_convertDate == transdt_CONVERT && transno == TRANSNO)
+                            {
+                                ITEMNM = row["ITEMNM"].ToString();
+                                QTY = Convert.ToDecimal(row["QTY"]);
+                                RATE = Convert.ToDecimal(row["RATE"]);
+                                AMOUNT = Convert.ToDecimal(row["AMOUNT"]);
+
+
+                                <tr style="outline:thin solid">
+                                    <td align="center" colspan="6">
+                                        @ITEMNM
+                                    </td>
+                                    <td align="center" colspan="3">
+                                        @QTY
+                                    </td>
+                                    <td align="right" colspan="4">
+                                        @RATE
+                                    </td>
+                                    <td align="right" colspan="5">
+                                        @AMOUNT
+                                    </td>
+                                </tr>
+
+                                //total_QTY = total_QTY + QTY;
+                                //total_RATE = total_RATE + RATE;
+                                total_AMOUNT = AMOUNT + total_AMOUNT;
+                            }
+                        }
+                        conn.Close();
+                    }
+                    conn1.Close();
+
+                }
+                <tr>
+                    <td>
+                        <br />
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2"></td>
+                    <td colspan="3"></td>
+                    <td colspan="1"></td>
+                    <td colspan="3"></td>
+                    <td align="right" colspan="4" style="font-weight:bold">
+                        Total:
+                    </td>
+                    <td align="right" colspan="5" style="font-weight:bold">
+                       @total_AMOUNT
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

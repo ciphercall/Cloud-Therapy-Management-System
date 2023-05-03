@@ -1,0 +1,241 @@
+/* 
+Media query
+Smartphones (portrait and landscape) ----------- 
+*/
+
+@media only screen and (min-device-width: 320px) and (max-device-width: 480px) {
+    /* Styles */
+    
+    #contentBox #homeTiles > div {
+        width: 41%;
+    }
+    #menuCollapse, #menuExpand {
+        display: none;
+    }
+    #sidebar {
+        height: auto !important;
+    }
+    #header #profile_photo {
+        top: -24px;
+    }
+    #header .logo {
+        position: relative;
+        top: -20px;
+        padding: 8px;
+    }
+    div#developerName {
+        width: 52% !important;
+    }
+    #sidebar #developer div#developerLogo img {
+        width: 40px;
+        height: 40px;
+    }
+    #sidebar #developerDivider {
+        display: none;
+    }
+    div#btnChat {
+        width: 40% !important;
+    }
+    #sidebar #developer div#pop-up {
+        left: 0px;
+    }
+    #themesThum td {
+        width: 97%;
+        padding: 5px;
+        display: block;
+    }
+}
+/* Smartphones (portrait) ----------- */
+
+@media only screen and (max-width: 480px) {
+    .searchBox {
+        display: none;
+    }
+    #contentBox #chart #homeChartSummary {
+        width: 95%;
+    }
+    #contentBox #chart #homeChart {
+        width: 95%;
+    }
+    #contentBox #homeTiles > div > p {
+        font-size: 28px;
+    }
+    #contentBox #homeTiles > div > div {
+        padding: 0;
+    }
+    div#developerName {
+        width: 52% !important;
+    }
+    #sidebar #developer div#developerLogo img {
+        width: 40px;
+        height: 40px;
+    }
+    #sidebar #developerDivider {
+        display: none;
+    }
+    div#btnChat {
+        width: 40% !important;
+    }
+    #sidebar #developer div#pop-up {
+        left: 0px;
+    }
+
+    #themesThum td {
+        width: 50%;
+        padding: 5px;
+        display: block;
+    }
+}
+@media only screen and (max-width: 320px) {
+    /* Styles */
+    
+    .searchBox {
+        display: none;
+    }
+    #menuCollapse, #menuExpand {
+        display: none;
+    }
+    #sidebar {
+        height: auto !important;
+    }
+    #header #profile_photo {
+        top: -24px;
+    }
+    #header .logo {
+        position: relative;
+        top: -20px;
+        padding: 8px;
+    }
+    div#developerName {
+        width: 52% !important;
+    }
+    #sidebar #developer div#developerLogo img {
+        width: 40px;
+        height: 40px;
+    }
+    #sidebar #developerDivider {
+        display: none;
+    }
+    div#btnChat {
+        width: 40% !important;
+    }
+    #sidebar #developer div#pop-up {
+        left: 0px;
+    }
+    #contentBox {
+        margin-top: -12px !important;
+        height: auto !important;
+    }
+    #header+div {
+        display: none;
+    }
+    #themesThum td {
+        width: 97%;
+        padding: 5px;
+        display: block;
+    }
+
+    #themesThum td>img{width:97%; }
+    #themesThum td>p{width:96%; }
+}
+@media only screen and (max-width: 768px) {
+    #menuCollapse, #menuExpand {
+        display: none;
+    }
+    #sidebar {
+        height: auto !important;
+        display: none;
+    }
+    #header #profile_photo {
+        top: -35px;
+    }
+    #header .logo {
+        position: relative;
+        top: -20px;
+        padding: 8px;
+    }
+    #header #pageHeader {
+        height: 60px;
+    }
+    #header #pageHeader h1 {
+        padding-top: 15px;
+    }
+    #sidebar {
+        margin-top: -33px;
+    }
+    #normalView {
+        display: none;
+    }
+    #header #responsiveMenu {
+        display: inline-block;
+    }
+    #mainContentBox {
+        width: 100%;
+        margin-right: 9px;
+    }
+}
+@media only screen and (max-width: 1211px) {
+    #menuCollapse, #menuExpand {
+        display: none;
+    }
+    #sidebar {
+        height: auto !important;
+        display: none;
+    }
+    #header #profile_photo {
+        top: -35px;
+    }
+    #header .logo {
+        position: relative;
+        top: -20px;
+        padding: 8px;
+    }
+    #header #pageHeader {
+        margin-top: -33px;
+    }
+    #header #pageHeader h1 {
+        padding-top: 15px;
+    }
+    #sidebar {
+        margin-top: -13px;
+        padding-bottom: 22px !important;
+    }
+    #normalView {
+        display: none;
+    }
+    #header #responsiveMenu {
+        display: inline-block;
+    }
+    #mainContentBox {
+        width: 100%;
+        margin-right: 9px;
+    }
+    #sidebar #developer {
+        position: relative;
+        margin-top: 52px;
+        bottom: 37px;
+    }
+    #sidebar #developer div#developerName {
+        width: 18%;
+    }
+    #sidebar #developer div#developerLogo img {
+        width: 40px;
+        height: 40px;
+    }
+    #sidebar #developerDivider {
+        display: none;
+    }
+    #sidebar #developer div#btnChat {
+        width: 13%;
+    }
+    #header+div {
+        display: none;
+    }
+    #contentBox {
+        margin-top: -10px;
+        height: auto !important;
+    }
+    #contentHeaderBox #editOption {
+        right: 16px;
+    }
+}

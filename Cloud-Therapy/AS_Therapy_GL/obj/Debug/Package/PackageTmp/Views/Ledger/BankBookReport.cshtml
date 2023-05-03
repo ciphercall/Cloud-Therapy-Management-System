@@ -1,0 +1,536 @@
+﻿@using AS_Therapy_GL.DataAccess
+@using AS_Therapy_GL.Models
+@model AS_Therapy_GL.Models.PageModel
+
+@{
+    Layout = null;
+
+    var LoggedCompId = Model.AGlMaster.COMPID;
+
+    Int64 compid = Convert.ToInt64(LoggedCompId);
+
+    string companyName = "", address = "", contactNo = "";
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+
+    var SelectCompanyName = from n in db.AslCompanyDbSet
+
+                            where n.COMPID == compid
+                            select new { n.COMPNM, n.ADDRESS, n.CONTACTNO };
+
+    foreach (var n in SelectCompanyName)
+    {
+        companyName = n.COMPNM;
+        address = n.ADDRESS;
+        contactNo = n.CONTACTNO;
+    }
+    var compNm = companyName;
+    var Address = address;
+    var contactno = contactNo;
+
+    var accountname = Model.AGL_acchart.ACCOUNTNM;
+    var fromdate = Model.FromDate;
+    var todate = Model.ToDate;
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+    decimal opBalance = 0, totaldebit = 0, totalcredit = 0, totalbalance = 0;
+    string transno = "";
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+
+    <link href="~/Content/reportcss/style.css" rel="stylesheet" />
+</head>
+
+<body style=" background-color:#fafafa;">
+    <div style="width: 960px; margin: 0px auto; border: 1px solid #d3d3d3; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); background: none repeat scroll 0 0 white;">
+        <table id="mainTable" border="0" width="100%">
+            <thead>
+                <tr>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="10%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+                    <td width="5%"></td>
+
+                </tr>
+
+                <tr style="background-color: #00689b">
+                    <td colspan="12">
+                        <h3 style="color: white;padding:4px">@compNm</h3>
+                        <p style="color:white;padding-left:4px">@Address<span>  @contactno</span></p>
+                    </td>
+
+                    <td colspan="6" style="color: white;padding:8px" align="right">
+                        Powered By<br />Alchemy Software
+                    </td>
+
+                </tr>
+
+                <tr>
+                    <td colspan="12" align="left" style="padding: 4px; font-weight: bold">Bank Book</td>
+                    <td align="right" colspan="6" style="padding:8px">Print:@currentDateTime.ToString("dd-MM-yy hh:mm tt")</td>
+                </tr>
+                <tr style="outline: thin solid">
+
+                    <td colspan="12" style="font-weight: bold;padding:4px">@accountname</td>
+
+
+                </tr>
+                <tr style="outline: thin solid">
+                    @{
+                        string d = Convert.ToString(fromdate);
+                        DateTime fdate = DateTime.Parse(d);
+                        string ffdt = fdate.ToString("dd-MMM-yyyy");
+
+
+                        string d2 = Convert.ToString(todate);
+                        DateTime fdate2 = DateTime.Parse(d2);
+                        string ffdt2 = fdate2.ToString("dd-MMM-yyyy");
+
+                    }
+                    <td colspan="6" style="font-weight: bold;padding:4px">
+                        From : <span style="font-weight:bold">@ffdt</span>
+                    </td>
+                    <td colspan="6" style="font-weight: bold;padding:4px">
+                        To :<span style="font-weight:bold">@ffdt2</span>
+                    </td>
+
+
+                </tr>
+                <tr style="background-color: #00689b; outline: thin solid">
+                    <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Date</td>
+                    <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Voucher No</td>
+                    <td colspan="8" style="color: white; padding: 4px; font-size: small" align="center">Particulars</td>
+                    <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Debit(Tk.)</td>
+                    <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Credit(Tk.)</td>
+                    <td colspan="2" style="color: white; padding: 4px; font-size: small" align="center">Balance(Tk.)</td>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var result_account = from n in db.GlAcchartDbSet where n.COMPID == compid && n.ACCOUNTNM == accountname select new { n.ACCOUNTCD };
+                    string accountcd = "";
+                    foreach (var x in result_account)
+                    {
+                        accountcd = Convert.ToString(x.ACCOUNTCD);
+                    }
+                    string substringCD = accountcd.Substring(3, 1);
+                    Int64 Accountcode = Convert.ToInt64(accountcd);
+                    var foropeningBalance = from n in db.GlMasterDbSet
+                                            where n.COMPID == compid && n.TRANSDT < fromdate && n.DEBITCD == Accountcode
+                                            select new { n.DEBITAMT, n.CREDITAMT };
+                    if (substringCD == "1" || substringCD == "4")
+                    {
+
+
+                        decimal creditsum = 0, debitsum = 0;
+                        foreach (var x in foropeningBalance)
+                        {
+                            creditsum = Convert.ToDecimal(creditsum + x.CREDITAMT);
+                            debitsum = Convert.ToDecimal(debitsum + x.DEBITAMT);
+                        }
+                        opBalance = debitsum - creditsum;
+
+                    }
+                    else
+                    {
+
+
+                        decimal creditsum = 0, debitsum = 0;
+                        foreach (var x in foropeningBalance)
+                        {
+                            creditsum = Convert.ToDecimal(creditsum + x.CREDITAMT);
+                            debitsum = Convert.ToDecimal(debitsum + x.DEBITAMT);
+                        }
+                        opBalance = creditsum - debitsum;
+                    }
+                    Int64 i = 0;
+    // var data = from n in db.GlMasterDbSet where n.COMPID == compid && n.TRANSDT >= fromdate && n.TRANSDT <= todate select n;
+                }
+                <tr style="outline:thin solid">
+                    <td colspan="9" align="right" style="padding-left:12px">
+                        Opening Balance :
+                    </td>
+                    @{
+                        string convertopamount = Convert.ToString(opBalance);
+                        string Opening = CommainAmount.AmountwithComma(convertopamount);
+                    }
+                    @if (Opening == "")
+                    {
+                        <td colspan="9" align="right" style="font-weight: bold">
+                            0.00
+                        </td>
+                    }
+                    else
+                    {
+                        <td colspan="9" align="right" style="font-weight:bold ">
+                            @Opening
+                        </td>
+                    }
+
+                </tr>
+                @{
+                    var data = (from n in db.GlMasterDbSet where n.COMPID == compid && n.TRANSDT >= fromdate && n.TRANSDT <= todate && n.DEBITCD == Accountcode select n).OrderBy(x => x.TRANSDT).ToList();
+                    totaldebit = opBalance;
+                    string openingBlanceShow = "";
+                }
+                @foreach (var item in data)
+                {
+
+                    opBalance = Convert.ToDecimal(opBalance + item.DEBITAMT - item.CREDITAMT);
+                    string convertBalance = Convert.ToString(opBalance);
+                    openingBlanceShow = CommainAmount.AmountwithComma(convertBalance);
+
+                    totaldebit = Convert.ToDecimal(totaldebit + item.DEBITAMT);
+                    totalcredit = Convert.ToDecimal(totalcredit + item.CREDITAMT);
+
+
+                    string xx = Convert.ToString(item.TRANSDT);
+                    DateTime date = DateTime.Parse(xx);
+                    string TransDate = date.ToString("dd-MMM-yy");
+
+                    var forHeaddesc = from n in db.GlAcchartDbSet where n.COMPID == compid && n.ACCOUNTCD == item.CREDITCD select new { n.ACCOUNTNM };
+                    string creditaccount = "";
+                    foreach (var x in forHeaddesc)
+                    {
+                        creditaccount = x.ACCOUNTNM;
+                    }
+                    if (i == 0)
+                    {
+                        <tr style="outline:thin solid">
+                            <td colspan="2" align="center" style="font-size: small">@TransDate</td>
+                            @{
+                        if (item.TRANSTP == "MREC")
+                        {
+                            transno = Convert.ToString(item.TRANSNO);
+                            transno = "RV-" + transno;
+                        }
+                        else if (item.TRANSTP == "MPAY")
+                        {
+                            transno = Convert.ToString(item.TRANSNO);
+                            transno = "PV-" + transno;
+                        }
+                        else if (item.TRANSTP == "JOUR")
+                        {
+                            transno = Convert.ToString(item.TRANSNO);
+                            transno = "JV-" + transno;
+                        }
+                        else if (item.TRANSTP == "CONT")
+                        {
+                            transno = Convert.ToString(item.TRANSNO);
+                            transno = "CV-" + transno;
+                        }
+                        else
+                        {
+                            transno = Convert.ToString(item.TRANSNO);
+                        }
+                            }
+                            <td colspan="2" align="center" style="font-size: small">@transno</td>
+                            @if (creditaccount != "")
+                            {
+
+                                var dd = item.REMARKS;
+                                var chequeno = item.CHEQUENO;
+
+                                if (dd != null && chequeno != null)
+                                {
+                                    if (item.CHEQUEDT != null)
+                                    {
+                                        var chequedate = item.CHEQUEDT;
+                                        string d3 = Convert.ToString(chequedate);
+                                        DateTime fdate3 = DateTime.Parse(d3);
+                                        string chquedt = fdate3.ToString("dd-MMM-yyyy");
+                                        <td colspan="8" align="left" style="font-size: small">@creditaccount <br />@dd|@chequeno|@chquedt</td>
+                                    }
+                                    else
+                                    {
+                                        <td colspan="8" align="left" style="font-size: small">@creditaccount <br />@dd|@chequeno</td>
+                                    }
+                                }
+                                else if (dd == null && chequeno != null)
+                                {
+                                    var chequedate = item.CHEQUEDT;
+                                    string d3 = Convert.ToString(chequedate);
+                                    DateTime fdate3 = DateTime.Parse(d3);
+                                    string chquedt = fdate3.ToString("dd-MMM-yyyy");
+
+                                    <td colspan="8" align="left" style="font-size: small">@creditaccount <br />@chequeno|@chquedt</td>
+                                }
+                                else if (dd == null && chequeno == null)
+                                {
+                                    <td colspan="8" align="left" style="font-size: small">@creditaccount</td>
+                                }
+                                else if (dd != null && chequeno == null)
+                                {
+                                    <td colspan="8" align="left" style="font-size: small">@creditaccount <br />@dd</td>
+                                }
+
+                            }
+                            else
+                            {
+                                <td colspan="8" align="left" style="font-size: small">Opening Balance</td>
+                            }
+
+
+                            @{
+                            Int64 dcheck = 0, ccheck = 0;
+                            string debitamt = "", creditamt = "";
+                            if (item.DEBITAMT < 0)
+                            {
+                                item.DEBITAMT = item.DEBITAMT * (-1);
+                                dcheck = 1;
+                                string convertdebit = Convert.ToString(item.DEBITAMT);
+
+                                debitamt = CommainAmount.AmountwithComma(convertdebit);
+                            }
+                            else
+                            {
+                                dcheck = 0;
+                                string convertdebit = Convert.ToString(item.DEBITAMT);
+
+                                debitamt = CommainAmount.AmountwithComma(convertdebit);
+                            }
+
+                            if (item.CREDITAMT < 0)
+                            {
+                                item.CREDITAMT = item.CREDITAMT * (-1);
+                                ccheck = 1;
+                                string convertcredit = Convert.ToString(item.CREDITAMT);
+
+                                creditamt = CommainAmount.AmountwithComma(convertcredit);
+                            }
+                            else
+                            {
+                                ccheck = 0;
+                                string convertcredit = Convert.ToString(item.CREDITAMT);
+
+                                creditamt = CommainAmount.AmountwithComma(convertcredit);
+                            }
+
+                            }
+
+                            <td colspan="2" align="right" style="font-size: small">@debitamt</td>
+                            <td colspan="2" align="right" style="font-size: small">@creditamt</td>
+                            <td colspan="2" align="right" style="font-size: small">@openingBlanceShow</td>
+                        </tr>
+                            i = 1;
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="2" align="center" style="font-size: small">@TransDate</td>
+                            @{
+                        if (item.TRANSTP == "MREC")
+                        {
+                            transno = Convert.ToString(item.TRANSNO);
+                            transno = "RV-" + transno;
+                        }
+                        else if (item.TRANSTP == "MPAY")
+                        {
+                            transno = Convert.ToString(item.TRANSNO);
+                            transno = "PV-" + transno;
+                        }
+                        else if (item.TRANSTP == "JOUR")
+                        {
+                            transno = Convert.ToString(item.TRANSNO);
+                            transno = "JV-" + transno;
+                        }
+                        else if (item.TRANSTP == "CONT")
+                        {
+                            transno = Convert.ToString(item.TRANSNO);
+                            transno = "CV-" + transno;
+                        }
+                        else
+                        {
+                            transno = Convert.ToString(item.TRANSNO);
+                        }
+                            }
+                            <td colspan="2" align="center" style="font-size: small">@transno</td>
+                            @if (creditaccount != "")
+                            {
+
+                                var dd = item.REMARKS;
+                                var chequeno = item.CHEQUENO;
+
+                                if (dd != null && chequeno != null)
+                                {
+                                    if (item.CHEQUEDT != null)
+                                    {
+                                        var chequedate = item.CHEQUEDT;
+                                        string d3 = Convert.ToString(chequedate);
+                                        DateTime fdate3 = DateTime.Parse(d3);
+                                        string chquedt = fdate3.ToString("dd-MMM-yyyy");
+                                        <td colspan="8" align="left" style="font-size: small">@creditaccount <br />@dd|@chequeno|@chquedt</td>
+                                    }
+                                    else
+                                    {
+                                        <td colspan="8" align="left" style="font-size: small">@creditaccount <br />@dd|@chequeno</td>
+                                    }
+
+
+                                }
+                                else if (dd == null && chequeno != null)
+                                {
+                                    if (item.CHEQUEDT != null)
+                                    {
+                                        var chequedate = item.CHEQUEDT;
+                                        string d3 = Convert.ToString(chequedate);
+                                        DateTime fdate3 = DateTime.Parse(d3);
+                                        string chquedt = fdate3.ToString("dd-MMM-yyyy");
+                                        <td colspan="8" align="left" style="font-size: small">@creditaccount <br />@chequeno|@chquedt</td>
+                                    }
+                                    else
+                                    {
+                                        <td colspan="8" align="left" style="font-size: small">@creditaccount <br />@chequeno</td>
+                                    }
+                                }
+                                else if (dd == null && chequeno == null)
+                                {
+                                    <td colspan="8" align="left" style="font-size: small">@creditaccount</td>
+                                }
+                                else if (dd != null && chequeno == null)
+                                {
+                                    <td colspan="8" align="left" style="font-size: small">@creditaccount <br />@dd</td>
+                                }
+
+                            }
+                            else
+                            {
+                                <td colspan="8" align="left" style="font-size: small">Opening Balance</td>
+                            }
+                            @{
+                            Int64 dcheck = 0, ccheck = 0;
+                            string debitamt = "", creditamt = "";
+                            if (item.DEBITAMT < 0)
+                            {
+                                item.DEBITAMT = item.DEBITAMT * (-1);
+                                dcheck = 1;
+                                string convertdebit = Convert.ToString(item.DEBITAMT);
+
+                                debitamt = CommainAmount.AmountwithComma(convertdebit);
+                            }
+                            else
+                            {
+                                dcheck = 0;
+                                string convertdebit = Convert.ToString(item.DEBITAMT);
+
+                                debitamt = CommainAmount.AmountwithComma(convertdebit);
+                            }
+
+                            if (item.CREDITAMT < 0)
+                            {
+                                item.CREDITAMT = item.CREDITAMT * (-1);
+                                ccheck = 1;
+                                string convertcredit = Convert.ToString(item.CREDITAMT);
+
+                                creditamt = CommainAmount.AmountwithComma(convertcredit);
+                            }
+                            else
+                            {
+                                ccheck = 0;
+                                string convertcredit = Convert.ToString(item.CREDITAMT);
+
+                                creditamt = CommainAmount.AmountwithComma(convertcredit);
+                            }
+
+                            }
+
+                            <td colspan="2" align="right" style="font-size: small">@debitamt</td>
+                            <td colspan="2" align="right" style="font-size: small">@creditamt</td>
+                            <td colspan="2" align="right" style="font-size: small">@openingBlanceShow</td>
+                        </tr>
+                            i = 0;
+                    }
+
+                }
+                @{
+                    totalbalance = totaldebit - totalcredit;
+                    Int64 st = 0;
+                    if (totalbalance < 0)
+                    {
+                        totalbalance = totalbalance * (-1);
+                        st = 1;
+                    }
+                    else
+                    {
+                        st = 0;
+                    }
+
+                    string convertamount = Convert.ToString(totalbalance);
+                    string tBalance = CommainAmount.AmountwithComma(convertamount);
+
+
+                    string convertamount1 = Convert.ToString(totaldebit);
+                    string tDebit = CommainAmount.AmountwithComma(convertamount1);
+
+                    string convertamount2 = Convert.ToString(totalcredit);
+                    string tCredit = CommainAmount.AmountwithComma(convertamount2);
+
+
+                }
+                <tr style="outline:thin solid">
+                    <td colspan="12" align="right" style="font-weight:bold;font-size: small">Total :</td>
+                    @if (tDebit == "")
+                    {
+                        <td colspan="2" align="right" style="font-weight:bold;font-size: small ">0.00</td>
+                    }
+                    else
+                    {
+                        <td colspan="2" align="right" style="font-weight:bold;font-size: small ">@tDebit</td>
+                    }
+                    @if (tCredit == "")
+                    {
+                        <td colspan="2" align="right" style="font-weight: bold;font-size: small">0.00</td>
+                    }
+                    else
+                    {
+                        <td colspan="2" align="right" style="font-weight:bold;font-size: small ">@tCredit</td>
+                    }
+
+
+                    @if (st == 0)
+                    {
+                        if (tBalance == "")
+                        {
+                            <td colspan="2" align="right" style="font-weight:bold;font-size: small">0.00</td>
+                        }
+                        else
+                        {
+                            <td colspan="2" align="right" style="font-weight:bold;font-size: small">@tBalance</td>
+                        }
+
+                    }
+                    else
+                    {
+                        <td colspan="2" align="right" style="font-weight:bold;font-size: small">-@tBalance</td>
+                    }
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
+

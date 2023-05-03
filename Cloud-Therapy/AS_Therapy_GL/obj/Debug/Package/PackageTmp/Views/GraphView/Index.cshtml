@@ -1,0 +1,155 @@
+﻿@using System.Data
+@using System.Data.SqlClient
+@using AS_Therapy_GL.Models
+@{
+    ViewBag.Title = "Index";
+    if (HttpContext.Current.Session["LoggedUserType"] == null)
+    {
+        Response.Redirect(Url.Action("Index", "Login"));
+    }
+
+    var LoggedUserTp = HttpContext.Current.Session["LoggedUserType"].ToString();
+    var LoggedUserStatus = HttpContext.Current.Session["LoggedUserStatus"].ToString();
+    var LoggedCompanyStatus = HttpContext.Current.Session["LoggedCompanyStatus"].ToString();
+
+    if ((LoggedUserTp == "CompanyAdmin" || LoggedUserTp == "UserAdmin" || LoggedUserTp == "User") && LoggedUserStatus == "A" && LoggedCompanyStatus == "A")
+    {
+
+    }
+    else
+    {
+        Response.Redirect(Url.Action("Index", "Logout"));
+    }
+
+    Therapy_GL_DbContext db = new Therapy_GL_DbContext();
+    Int64 companyID = Convert.ToInt64(HttpContext.Current.Session["loggedCompID"].ToString());
+
+
+
+    TimeZoneInfo timeZoneInfo;
+    timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+    DateTime currentDateTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+
+
+
+}
+
+<div id="contentHeaderBox">
+    <h1>DASHBOARD</h1>
+</div>
+<br />
+
+<div class="col-md-12">
+    <div class="panel panel-primary">
+        <div class="panel-heading">Patient Information</div>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <tr>
+                    <th>
+                        PatientID
+                    </th>
+                    <th>
+                        Name
+                    </th>
+                    <th>
+                        Gender
+                    </th>
+                    <th>
+                        Age
+                    </th>
+                    <th>
+                        Mobile NO
+                    </th>
+                    <th>
+                        Registration Date
+                    </th>
+                    <th>
+                        Status
+                    </th>
+                    <th>
+                        In Time
+                    </th>
+                    <th></th>
+                </tr>
+
+
+                @{
+                    System.Data.SqlClient.SqlConnection conn1 = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.ConnectionStrings["Therapy_GL_DbContext"].ToString());
+                    string query1 = string.Format(
+                        "SELECT DISTINCT PST_PATIENT.COMPID,PST_PATIENT.PATIENTID,PST_PATIENT.PATIENTIDM, PST_PATIENT.PATIENTNM, PST_PATIENT.GENDER, PST_PATIENT.AGE, PST_PATIENT.MOBNO1, PST_PATIENT.PATIENTDT, " +
+                        "(CASE WHEN TRANSDT = PST_PATIENT.PATIENTDT THEN 'NEW' ELSE 'OLD' END) STATUS, PST_TRANSMST.INSTIME  FROM PST_TRANSMST " +
+                        "INNER JOIN PST_PATIENT ON PST_TRANSMST.COMPID = PST_PATIENT.COMPID AND PST_TRANSMST.PATIENTID = PST_PATIENT.PATIENTID " +
+                        "WHERE PST_TRANSMST.COMPID = '{0}' AND TRANSDT = '{1}' " +
+                        "ORDER BY PST_PATIENT.PATIENTIDM DESC",
+                        companyID, currentDateTime.ToString("dd-MMM-yyyy"));
+                    System.Data.SqlClient.SqlCommand cmd1 = new System.Data.SqlClient.SqlCommand(query1, conn1);
+                    conn1.Open();
+                    SqlDataAdapter da1 = new SqlDataAdapter(cmd1);
+                    DataTable ds1 = new DataTable();
+                    da1.Fill(ds1);
+
+                    string patientName = "", Gender = "", Age = "", Mobile = "", patientDate = "", status = "", inTime = "";
+                    DateTime convertONlyDate, time;
+                    Int64 compid = 0, PatientID = 0, patientIDM = 0;
+                    foreach (DataRow row in ds1.Rows)
+                    {
+                        compid = Convert.ToInt64(row["COMPID"]);
+                        PatientID = Convert.ToInt64(row["PATIENTID"]);
+                        patientIDM = Convert.ToInt64(row["PATIENTIDM"]);
+                        patientName = Convert.ToString(row["PATIENTNM"]);
+                        Gender = Convert.ToString(row["GENDER"]);
+                        Age = Convert.ToString(row["AGE"]);
+                        Mobile = Convert.ToString(row["MOBNO1"]);
+
+                        convertONlyDate = Convert.ToDateTime(row["PATIENTDT"]);
+                        patientDate = convertONlyDate.ToString("dd-MMM-yyyy");
+
+                        status = Convert.ToString(row["STATUS"]);
+
+                        time = Convert.ToDateTime(row["INSTIME"]);
+                        inTime = time.ToString("hh:mm tt");
+
+                        <tr>
+                            <td>
+                                @patientIDM
+                            </td>
+                            <td>
+                                @patientName
+                            </td>
+                            <td>
+                                @Gender
+                            </td>
+                            <td>
+                                @Age
+                            </td>
+                            <td>
+                                @Mobile
+                            </td>
+                            <td>
+                                @patientDate
+                            </td>
+                            <td>
+                                @status
+                            </td>
+                            <td>
+                                @inTime
+                            </td>
+                            <td>
+                                <span>
+                                    <a href="@Url.Action("IndexPost", new { cid = compid, patientID = PatientID, patient_idm = patientIDM })" class="btn btn-sm btn-info" target="_blank">
+                                        <i class="fa fa-pencil-square-o"></i>
+                                    </a>
+                                </span>
+                            </td>
+                        </tr>
+
+                    }
+                    conn1.Close();
+
+                }
+
+            </table>
+        </div>
+    </div>
+
+</div>
